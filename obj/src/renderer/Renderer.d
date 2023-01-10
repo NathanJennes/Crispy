@@ -77,4 +77,5 @@ obj/src/renderer/Renderer.o: src/renderer/Renderer.cpp \
  /usr/include/c++/12/bits/stl_function.h \
  /usr/include/c++/12/backward/binders.h \
  /usr/include/c++/12/bits/range_access.h \
- /usr/include/c++/12/bits/vector.tcc
+ /usr/include/c++/12/bits/vector.tcc src/defines.h \
+ /usr/include/c++/12/cstdint /usr/include/c++/12/cstddef

@@ -138,4 +138,4 @@ obj/src/vulkan/VulkanInstance.o: src/vulkan/VulkanInstance.cpp \
  /usr/include/bits/uio-ext.h /usr/include/xcb/xproto.h \
  /usr/include/xcb/xcb.h \
  /home/nathan/vulkan/1.3.216.0/x86_64/include/vulkan/vulkan_xcb.h \
- src/log.h
+ src/defines.h /usr/include/c++/12/cstddef src/log.h

@@ -7,21 +7,29 @@
 #include <iostream>
 #include "VulkanInstance.h"
 #include "log.h"
+#include "defines.h"
 
 namespace Vulkan {
 
-VkInstance VulkanInstance::_instance;
-VkDebugUtilsMessengerEXT VulkanInstance::_debug_messenger;
+VkInstance					VulkanInstance::_instance;
+VkDebugUtilsMessengerEXT	VulkanInstance::_debug_messenger;
+VkPhysicalDevice			VulkanInstance::_physical_device;
 
 bool VulkanInstance::initialize()
 {
 	if (!init_instance())
 		return false;
+	CORE_DEBUG("Vulkan instance initialized!");
 
 #ifdef DEBUG
 	if (!init_debug_messenger())
 		return false;
+	CORE_DEBUG("Vulkan validation layers initialized!");
 #endif
+
+	if (!pick_physical_device())
+		return false;
+	CORE_INFO("Physical device picked!");
 
 	return true;
 }
@@ -98,7 +106,7 @@ bool VulkanInstance::init_debug_messenger()
 
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance(), "vkCreateDebugUtilsMessengerEXT");
 	if (func != nullptr) {
-		return func(instance(), &create_info, nullptr, &_debug_messenger);
+		return func(instance(), &create_info, nullptr, &_debug_messenger) == VK_SUCCESS;
 	} else {
 		CORE_ERROR("Couldn't load function: vkCreateDebugUtilsMessengerEXT");
 		return false;
@@ -169,4 +177,104 @@ void VulkanInstance::destroy_debug_messenger()
 		func(instance(), _debug_messenger, nullptr);
 }
 
+bool VulkanInstance::pick_physical_device()
+{
+	std::vector<VkPhysicalDevice> devices = get_physical_device_list();
+	if (devices.size() == 0) {
+		CORE_ERROR("No physical device that supports vulkan was found!");
+		return false;
+	}
+
+#ifdef DEBUG
+	CORE_DEBUG("Available GPU devices: ");
+	for (auto& device : devices) {
+		VkPhysicalDeviceProperties properties{};
+		vkGetPhysicalDeviceProperties(device, &properties);
+		std::string text("Name: ");
+		text += properties.deviceName;
+		CORE_DEBUG(text.c_str());
+		text = "API version: ";
+		text += std::to_string(VK_API_VERSION_MAJOR(properties.apiVersion));
+		text += ".";
+		text += std::to_string(VK_API_VERSION_MINOR(properties.apiVersion));
+		text += ".";
+		text += std::to_string(VK_API_VERSION_PATCH(properties.apiVersion));
+		CORE_DEBUG(text.c_str());
+	}
+#endif
+
+	_physical_device = pick_best_device(devices);
+
+#ifdef DEBUG
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(_physical_device, &properties);
+	std::string text("Device picked: ");
+	text += properties.deviceName;
+	CORE_DEBUG(text.c_str());
+#endif
+
+	return true;
+}
+
+std::vector<VkPhysicalDevice> VulkanInstance::get_physical_device_list()
+{
+	u32 device_count = 0;
+	vkEnumeratePhysicalDevices(instance(), &device_count, nullptr);
+
+	std::vector<VkPhysicalDevice> devices(device_count);
+	vkEnumeratePhysicalDevices(instance(), &device_count, devices.data());
+	return devices;
+}
+
+bool VulkanInstance::is_physical_device_suitable(VkPhysicalDevice device)
+{
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(device, &properties);
+	VkPhysicalDeviceFeatures features{};
+	vkGetPhysicalDeviceFeatures(device, &features);
+
+	return properties.apiVersion >= VK_API_VERSION_1_3 && features.geometryShader;
+}
+
+VkPhysicalDevice VulkanInstance::pick_best_device(const std::vector<VkPhysicalDevice> &devices)
+{
+	if (devices.empty())
+		return VK_NULL_HANDLE;
+
+	VkPhysicalDevice best = devices[0];
+	u32 best_score = rate_physical_device(best);
+	for (auto& device : devices) {
+		u32 score = rate_physical_device(device);
+		if (score > best_score) {
+			best_score = score;
+			best = device;
+		}
+	}
+
+	return best;
+}
+
+u32 VulkanInstance::rate_physical_device(VkPhysicalDevice device)
+{
+	if (!is_physical_device_suitable(device))
+		return 0;
+
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(device, &properties);
+
+	VkPhysicalDeviceMemoryProperties memory{};
+	vkGetPhysicalDeviceMemoryProperties(device, &memory);
+
+	u32 score = 0;
+
+	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		score += 100;
+
+	u32 gigas = 0;
+	for (u32 i = 0; i < memory.memoryHeapCount; i++)
+		gigas += memory.memoryHeaps[i].size;
+
+	score += gigas / 1000000000;
+	return score;
+}
 }
