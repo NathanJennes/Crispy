@@ -10,18 +10,40 @@
 
 namespace Vulkan {
 
-Window::Window(const std::string &name, i32 x, i32 y, i32 width, i32 height)
-	: _name(name), _width(width), _height(height)
+bool Window::_should_close;
+bool Window::_initialized;
+std::string Window::_name;
+i32 Window::_width, Window::_height;
+
+Display *Window::_display;
+xcb_connection_t *Window::_connection;
+xcb_window_t Window::_window;
+xcb_screen_t *Window::_screen;
+xcb_atom_t Window::_wm_protocols;
+xcb_atom_t Window::_wm_delete_win;
+
+VkSurfaceKHR Window::_surface;
+
+bool Window::initialize(const std::string &name, i32 x, i32 y, i32 width, i32 height)
 {
+	_name = name;
+	_width = width;
+	_height = height;
+	_should_close = false;
+
 	_initialized = initialize_window(x, y);
-	if (initialized()) {
+	if (initialized())
+	{
 		CORE_INFO("Window successfully created !");
-	} else {
-		CORE_ERROR("Couldn't create the _window !");
+		return true;
 	}
+
+	CORE_ERROR("Couldn't create the _window !");
+	_should_close = true;
+	return false;
 }
 
-Window::~Window()
+void Window::shutdown()
 {
 	// Turn key repeat back on
 	XAutoRepeatOn(_display);
@@ -117,8 +139,11 @@ bool Window::initialize_window(i32 x, i32 y)
 	return (true);
 }
 
-bool Window::update()
+void Window::update()
 {
+	if (should_close() || !initialized())
+		return ;
+
 	xcb_generic_event_t *event = xcb_poll_for_event(_connection);
 	xcb_client_message_event_t *client_message;
 	bool quit_flagged = false;
@@ -178,11 +203,17 @@ bool Window::update()
 		event = xcb_poll_for_event(_connection);
 	}
 
-	return (!quit_flagged);
+	if (quit_flagged)
+		_should_close = true;
 }
 
 bool Window::initialized()
 {
 	return _initialized;
+}
+
+bool Window::should_close()
+{
+	return _should_close;
 }
 }

@@ -5,28 +5,21 @@
 #include <iostream>
 
 #include "utils.h"
-#include "Window.h"
+#include "Application.h"
 #include "input.h"
 
 int main()
 {
-	Vulkan::Window window("Vulkan app", 200, 200, 400, 400);
-	if (!window.initialized())
-		return (1);
+	Vulkan::Application app("Vulkan app", 200, 200, 400, 400);
 
 	bool limited_framerate = true;
 	f64 target_second_per_frame = 1.0 / 60.0;
 
-	bool running = true;
 	f64 last_time = get_absolute_time();
 
-	while (running)
+	while (!app.should_close())
 	{
-		if (!window.update()) {
-			running = false;
-		}
-		if (is_key_down(Vulkan::Keys::ESCAPE))
-			break;
+		app.update();
 
 		// Updating delta_time, sleeping if necessary to follow target fps
 		f64 current_time = get_absolute_time();

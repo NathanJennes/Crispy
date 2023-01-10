@@ -22,32 +22,32 @@ namespace Vulkan {
 class Window
 {
 public:
-	Window(const std::string& name, i32 x, i32 y, i32 width, i32 height);
-	~Window();
+	static bool initialize(const std::string& name, i32 x, i32 y, i32 width, i32 height);
+	static void shutdown();
+	static bool initialized();
 
-	bool initialized();
-
-	bool update();
-
-
-private:
-	bool initialize_window(i32 x, i32 y);
+	static void update();
+	static bool should_close();
 
 private:
-	bool _initialized;
-	std::string _name;
-	i32 _width, _height;
+	static bool initialize_window(i32 x, i32 y);
+
+private:
+	static bool _should_close;
+	static bool _initialized;
+	static std::string _name;
+	static i32 _width, _height;
 
 	//X11
-	Display *_display;
-	xcb_connection_t *_connection;
-	xcb_window_t _window;
-	xcb_screen_t *_screen;
-	xcb_atom_t _wm_protocols;
-	xcb_atom_t _wm_delete_win;
+	static Display *_display;
+	static xcb_connection_t *_connection;
+	static xcb_window_t _window;
+	static xcb_screen_t *_screen;
+	static xcb_atom_t _wm_protocols;
+	static xcb_atom_t _wm_delete_win;
 
 	//Vulkan
-	VkSurfaceKHR _surface;
+	static VkSurfaceKHR _surface;
 };
 
 }
