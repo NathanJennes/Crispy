@@ -7,22 +7,23 @@
 #include "Window.h"
 #include "log.h"
 #include "input.h"
+#include "vulkan/VulkanInstance.h"
 
 namespace Vulkan {
 
-bool Window::_should_close;
-bool Window::_initialized;
-std::string Window::_name;
-i32 Window::_width, Window::_height;
+bool				Window::_should_close = false;
+bool				Window::_initialized = false;
+std::string			Window::_name;
+i32					Window::_width, Window::_height;
 
-Display *Window::_display;
-xcb_connection_t *Window::_connection;
-xcb_window_t Window::_window;
-xcb_screen_t *Window::_screen;
-xcb_atom_t Window::_wm_protocols;
-xcb_atom_t Window::_wm_delete_win;
+Display				*Window::_display = nullptr;
+xcb_connection_t	*Window::_connection = nullptr;
+xcb_window_t		Window::_window = 0;
+xcb_screen_t		*Window::_screen = nullptr;
+xcb_atom_t			Window::_wm_protocols_mutex = 0;
+xcb_atom_t			Window::_wm_delete_win_mutex = 0;
 
-VkSurfaceKHR Window::_surface;
+VkSurfaceKHR		Window::_surface = VK_NULL_HANDLE;
 
 bool Window::initialize(const std::string &name, i32 x, i32 y, i32 width, i32 height)
 {
@@ -46,10 +47,10 @@ bool Window::initialize(const std::string &name, i32 x, i32 y, i32 width, i32 he
 void Window::shutdown()
 {
 	// Turn key repeat back on
-	XAutoRepeatOn(_display);
+	XAutoRepeatOn(display());
 
 	// Destroys the _window
-	xcb_destroy_window(_connection, _window);
+	xcb_destroy_window(connexion(), window());
 }
 
 bool Window::initialize_window(i32 x, i32 y)
@@ -58,19 +59,19 @@ bool Window::initialize_window(i32 x, i32 y)
 	_display = XOpenDisplay(nullptr);
 
 	// Turn off key repeat
-	XAutoRepeatOff(_display);
+	XAutoRepeatOff(display());
 
 	// Get the _connection from the _display
-	_connection = XGetXCBConnection(_display);
+	_connection = XGetXCBConnection(display());
 
-	if (xcb_connection_has_error(_connection))
+	if (xcb_connection_has_error(connexion()))
 	{
 		CORE_FATAL("Failed to connect to X server via XCB");
 		return (false);
 	}
 
 	// Get data from the X server
-	const struct xcb_setup_t *setup = xcb_get_setup(_connection);
+	const struct xcb_setup_t *setup = xcb_get_setup(connexion());
 
 	// Loop through screens
 	xcb_screen_iterator_t it = xcb_setup_roots_iterator(setup);
@@ -84,7 +85,7 @@ bool Window::initialize_window(i32 x, i32 y)
 	_screen = it.data;
 
 	// Allocate a XID for the _window to be created
-	_window = xcb_generate_id(_connection);
+	_window = xcb_generate_id(connexion());
 
 	// Register event types
 	// XCB_CW_BACK_PIXEL = filling the _window background with a single color
@@ -100,36 +101,37 @@ bool Window::initialize_window(i32 x, i32 y)
 	u32 value_list[] = {_screen->black_pixel, event_values};
 
 	// Creating the _window
-	xcb_create_window(_connection, XCB_COPY_FROM_PARENT, _window, _screen->root, x, y, _width, _height, 0, // No border
+	xcb_create_window(connexion(), XCB_COPY_FROM_PARENT, window(),
+		_screen->root, static_cast<i16>(x), static_cast<i16>(y), width(), height(), 0, // No border
 		XCB_WINDOW_CLASS_INPUT_OUTPUT, _screen->root_visual, event_mask, value_list);
 
 	// Change the title
-	xcb_change_property(_connection, XCB_PROP_MODE_REPLACE, _window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING,
+	xcb_change_property(connexion(), XCB_PROP_MODE_REPLACE, window(), XCB_ATOM_WM_NAME, XCB_ATOM_STRING,
 		8, // Data should be viewed 8 bits at a time
-		_name.size(), _name.data());
+		name().size(), name().data());
 
 	// Tells the server to notify when the _window manager attempts to destroy the _window
-	xcb_intern_atom_cookie_t wm_delete_cookie = xcb_intern_atom(_connection, 0, strlen("WM_DELETE_WINDOW"),
+	xcb_intern_atom_cookie_t wm_delete_cookie = xcb_intern_atom(connexion(), 0, strlen("WM_DELETE_WINDOW"),
 		"WM_DELETE_WINDOW");
 
-	xcb_intern_atom_cookie_t wm_protocols_cookie = xcb_intern_atom(_connection, 0, strlen("WM_PROTOCOLS"),
+	xcb_intern_atom_cookie_t wm_protocols_cookie = xcb_intern_atom(connexion(), 0, strlen("WM_PROTOCOLS"),
 		"WM_PROTOCOLS");
 
-	xcb_intern_atom_reply_t *wm_delete_reply = xcb_intern_atom_reply(_connection, wm_delete_cookie, nullptr);
+	xcb_intern_atom_reply_t *wm_delete_reply = xcb_intern_atom_reply(connexion(), wm_delete_cookie, nullptr);
 
-	xcb_intern_atom_reply_t *wm_protocols_reply = xcb_intern_atom_reply(_connection, wm_protocols_cookie, nullptr);
+	xcb_intern_atom_reply_t *wm_protocols_reply = xcb_intern_atom_reply(connexion(), wm_protocols_cookie, nullptr);
 
-	_wm_delete_win = wm_delete_reply->atom;
-	_wm_protocols = wm_protocols_reply->atom;
+	_wm_delete_win_mutex = wm_delete_reply->atom;
+	_wm_protocols_mutex = wm_protocols_reply->atom;
 
-	xcb_change_property(_connection, XCB_PROP_MODE_REPLACE, _window, wm_protocols_reply->atom, 4, 32, 1,
+	xcb_change_property(connexion(), XCB_PROP_MODE_REPLACE, window(), wm_protocols_reply->atom, 4, 32, 1,
 		&wm_delete_reply->atom);
 
 	// Map the _window to the _screen
-	xcb_map_window(_connection, _window);
+	xcb_map_window(connexion(), window());
 
 	// Flush the stream
-	i32 stream_result = xcb_flush(_connection);
+	i32 stream_result = xcb_flush(connexion());
 	if (stream_result <= 0)
 	{
 		CORE_FATAL("An error occured when flushing the XCB stream: %d", stream_result);
@@ -144,7 +146,7 @@ void Window::update()
 	if (should_close() || !initialized())
 		return ;
 
-	xcb_generic_event_t *event = xcb_poll_for_event(_connection);
+	xcb_generic_event_t *event = xcb_poll_for_event(connexion());
 	xcb_client_message_event_t *client_message;
 	bool quit_flagged = false;
 
@@ -158,7 +160,7 @@ void Window::update()
 				xcb_key_press_event_t *kb_event = (xcb_key_press_event_t *)event;
 				bool pressed = event->response_type == XCB_KEY_PRESS;
 				xcb_keycode_t code = kb_event->detail;
-				KeySym key_sym = XkbKeycodeToKeysym(_display, (KeyCode)code, 0, code & ShiftMask ? 1 : 0);
+				KeySym key_sym = XkbKeycodeToKeysym(display(), (KeyCode)code, 0, code & ShiftMask ? 1 : 0);
 
 				// Translate the keycode and update the input system
 				Keys key = translate_keycode(key_sym);
@@ -192,7 +194,7 @@ void Window::update()
 				client_message = (xcb_client_message_event_t *)event;
 
 				// Window close
-				if (client_message->data.data32[0] == _wm_delete_win) {
+				if (client_message->data.data32[0] == wm_delete_win_mutex()) {
 					quit_flagged = true;
 				}
 			} break;
@@ -200,20 +202,24 @@ void Window::update()
 				break;
 		}
 		free(event);
-		event = xcb_poll_for_event(_connection);
+		event = xcb_poll_for_event(connexion());
 	}
 
 	if (quit_flagged)
 		_should_close = true;
 }
 
-bool Window::initialized()
+bool Window::initialize_surface()
 {
-	return _initialized;
-}
+	VkXcbSurfaceCreateInfoKHR create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+	create_info.connection = connexion();
+	create_info.window = window();
 
-bool Window::should_close()
-{
-	return _should_close;
+	if (vkCreateXcbSurfaceKHR(VulkanInstance::instance(), &create_info, nullptr, &_surface) != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create a vulkan xcb surface");
+		return false;
+	}
+	return true;
 }
 }

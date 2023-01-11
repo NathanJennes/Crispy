@@ -22,32 +22,64 @@ namespace Vulkan {
 class Window
 {
 public:
-	static bool initialize(const std::string& name, i32 x, i32 y, i32 width, i32 height);
-	static void shutdown();
-	static bool initialized();
+	//----
+	// Initialization
+	//----
+	static bool	initialize(const std::string& name, i32 x, i32 y, i32 width, i32 height);
+	static bool	initialize_surface();
+	static void	shutdown();
 
-	static void update();
-	static bool should_close();
+	//----
+	// Updating
+	//----
+	static void	update();
 
-private:
-	static bool initialize_window(i32 x, i32 y);
+	//----
+	// Getters
+	//----
+	static bool			initialized() 	{ return _initialized; };
+	static bool			should_close()	{ return _should_close; };
+	static VkSurfaceKHR	surface()		{ return _surface; };
 
-private:
-	static bool _should_close;
-	static bool _initialized;
-	static std::string _name;
-	static i32 _width, _height;
+private:	// Methods
+	//----
+	// Initialization
+	//----
+	static bool	initialize_window(i32 x, i32 y);
 
-	//X11
-	static Display *_display;
-	static xcb_connection_t *_connection;
-	static xcb_window_t _window;
-	static xcb_screen_t *_screen;
-	static xcb_atom_t _wm_protocols;
-	static xcb_atom_t _wm_delete_win;
+	//----
+	// Getters
+	//----
+	static const std::string&	name()					{ return _name; }
+	static i32					width()					{ return _width; }
+	static i32					height()				{ return _height; }
+	static Display				*display()				{ return _display; }
+	static xcb_connection_t		*connexion()			{ return _connection; }
+	static xcb_window_t			window()				{ return _window; }
+	static xcb_screen_t			*screen()				{ return _screen; }
+	static xcb_atom_t			wm_protocols_mutex()	{ return _wm_protocols_mutex; }
+	static xcb_atom_t			wm_delete_win_mutex()	{ return _wm_delete_win_mutex; }
 
-	//Vulkan
-	static VkSurfaceKHR _surface;
+private:	// Members
+	static bool			_should_close;
+	static bool			_initialized;
+	static std::string	_name;
+	static i32			_width, _height;
+
+	//----
+	// X11
+	//----
+	static Display			*_display;
+	static xcb_connection_t	*_connection;
+	static xcb_window_t		_window;
+	static xcb_screen_t		*_screen;
+	static xcb_atom_t		_wm_protocols_mutex;
+	static xcb_atom_t		_wm_delete_win_mutex;
+
+	//----
+	// Vulkan
+	//----
+	static VkSurfaceKHR	_surface;
 };
 
 }

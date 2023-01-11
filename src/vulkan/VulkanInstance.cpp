@@ -8,6 +8,7 @@
 #include "VulkanInstance.h"
 #include "log.h"
 #include "defines.h"
+#include "Window.h"
 
 namespace Vulkan {
 
@@ -28,6 +29,10 @@ bool VulkanInstance::initialize()
 		return false;
 	CORE_TRACE("Vulkan validation layers initialized!");
 #endif
+
+	if (!Window::initialize_surface())
+		return false;
+	CORE_TRACE("Window surface created!");
 
 	if (!pick_physical_device())
 		return false;
@@ -165,10 +170,11 @@ bool VulkanInstance::supports_validation_layer(const std::vector<const char *> &
 void VulkanInstance::shutdown()
 {
 	vkDestroyDevice(logical_device(), nullptr);
+	vkDestroySurfaceKHR(instance(), Window::surface(), nullptr);
 #ifdef DEBUG
 	destroy_debug_messenger();
 #endif
-	vkDestroyInstance(_instance, nullptr);
+	vkDestroyInstance(instance(), nullptr);
 }
 
 std::vector<const char *> VulkanInstance::get_required_validation_layers()
