@@ -267,7 +267,27 @@ bool VulkanInstance::is_physical_device_suitable(VkPhysicalDevice device)
 	//vkGetPhysicalDeviceFeatures(device, &features);
 	QueueFamilyIndices queue_families = get_queues_for_device(device);
 
-	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete();
+	bool meets_extensions_requirements = true;
+	u32 extension_count;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+	std::vector<VkExtensionProperties> available_extensions(extension_count);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
+	std::vector<const char*> required_extensions = get_required_device_extensions();
+	for (const auto& required_extension : required_extensions) {
+		bool found = false;
+		for (const auto &available_extension: available_extensions) {
+			if (strcmp(available_extension.extensionName, required_extension) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			meets_extensions_requirements = false;
+			break;
+		}
+	}
+
+	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete() && meets_extensions_requirements;
 }
 
 VkPhysicalDevice VulkanInstance::pick_best_device(const std::vector<VkPhysicalDevice> &devices)
@@ -360,12 +380,15 @@ bool VulkanInstance::init_logical_device()
 
 	VkPhysicalDeviceFeatures device_features{};
 
+	std::vector<const char*> device_extensions = get_required_device_extensions();
+
 	VkDeviceCreateInfo device_infos{};
 	device_infos.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	device_infos.pQueueCreateInfos = queues_infos.data();
 	device_infos.queueCreateInfoCount = queues_infos.size();
 	device_infos.pEnabledFeatures = &device_features;
-	device_infos.enabledExtensionCount = 0;
+	device_infos.enabledExtensionCount = device_extensions.size();
+	device_infos.ppEnabledExtensionNames = device_extensions.data();
 	device_infos.enabledLayerCount = 0;
 
 #ifdef DEBUG
@@ -383,5 +406,12 @@ bool VulkanInstance::init_logical_device()
 	vkGetDeviceQueue(logical_device(), queues.present_index.value(), 0, &_present_queue);
 
 	return true;
+}
+
+std::vector<const char *> VulkanInstance::get_required_device_extensions()
+{
+	std::vector<const char*> requirements;
+	requirements.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	return requirements;
 }
 }

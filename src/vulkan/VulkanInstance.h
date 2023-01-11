@@ -61,6 +61,7 @@ private:	// Methods
 	// Logical Device management
 	//----
 	static bool	init_logical_device();
+	static std::vector<const char*>	get_required_device_extensions();
 
 	//----
 	// Debug
