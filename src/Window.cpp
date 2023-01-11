@@ -34,7 +34,7 @@ bool Window::initialize(const std::string &name, i32 x, i32 y, i32 width, i32 he
 	_initialized = initialize_window(x, y);
 	if (initialized())
 	{
-		CORE_INFO("Window successfully created !");
+		CORE_TRACE("Window successfully created !");
 		return true;
 	}
 

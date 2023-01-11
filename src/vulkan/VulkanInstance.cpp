@@ -11,25 +11,31 @@
 
 namespace Vulkan {
 
-VkInstance                    VulkanInstance::_instance;
-VkDebugUtilsMessengerEXT    VulkanInstance::_debug_messenger;
-VkPhysicalDevice            VulkanInstance::_physical_device;
+VkInstance					VulkanInstance::_instance;
+VkDebugUtilsMessengerEXT	VulkanInstance::_debug_messenger;
+VkPhysicalDevice			VulkanInstance::_physical_device;
+VkDevice					VulkanInstance::_logical_device;
+VkQueue						VulkanInstance::_graphics_queue;
 
 bool VulkanInstance::initialize()
 {
 	if (!init_instance())
 		return false;
-	CORE_DEBUG("Vulkan instance initialized!");
+	CORE_TRACE("Vulkan instance initialized!");
 
 #ifdef DEBUG
 	if (!init_debug_messenger())
 		return false;
-	CORE_DEBUG("Vulkan validation layers initialized!");
+	CORE_TRACE("Vulkan validation layers initialized!");
 #endif
 
 	if (!pick_physical_device())
 		return false;
-	CORE_INFO("Physical device picked!");
+	CORE_TRACE("Physical device picked!");
+
+	if (!init_logical_device())
+		return false;
+	CORE_TRACE("Logical device initialized!");
 
 	return true;
 }
@@ -158,6 +164,7 @@ bool VulkanInstance::supports_validation_layer(const std::vector<const char *> &
 
 void VulkanInstance::shutdown()
 {
+	vkDestroyDevice(logical_device(), nullptr);
 #ifdef DEBUG
 	destroy_debug_messenger();
 #endif
@@ -228,7 +235,7 @@ bool VulkanInstance::pick_physical_device()
 	vkGetPhysicalDeviceProperties(_physical_device, &properties);
 	std::string text("Device picked: ");
 	text += properties.deviceName;
-	CORE_DEBUG(text.c_str());
+	CORE_TRACE(text.c_str());
 #endif
 
 	return true;
@@ -319,5 +326,42 @@ VulkanInstance::QueueFamilyIndicies VulkanInstance::get_queues_for_device(VkPhys
 	}
 
 	return indices;
+}
+
+bool VulkanInstance::init_logical_device()
+{
+	QueueFamilyIndicies queues = get_queues_for_device(physical_device());
+
+	VkDeviceQueueCreateInfo queue_infos{};
+	queue_infos.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queue_infos.queueFamilyIndex = queues.graphics_index.value();
+	queue_infos.queueCount = 1;
+	float queue_priority = 1.0f;
+	queue_infos.pQueuePriorities = &queue_priority;
+
+	VkPhysicalDeviceFeatures device_features{};
+
+	VkDeviceCreateInfo device_infos{};
+	device_infos.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	device_infos.pQueueCreateInfos = &queue_infos;
+	device_infos.queueCreateInfoCount = 1;
+	device_infos.pEnabledFeatures = &device_features;
+	device_infos.enabledExtensionCount = 0;
+	device_infos.enabledLayerCount = 0;
+
+#ifdef DEBUG
+	std::vector<const char*> required_layers = get_required_validation_layers();
+	device_infos.ppEnabledLayerNames = required_layers.data();
+	device_infos.enabledLayerCount = required_layers.size();
+#endif
+
+	if (vkCreateDevice(physical_device(), &device_infos, nullptr, &_logical_device) != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create a logical device!");
+		return false;
+	}
+
+	vkGetDeviceQueue(logical_device(), queues.graphics_index.value(), 0, &_graphics_queue);
+
+	return true;
 }
 }

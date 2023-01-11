@@ -25,7 +25,7 @@ DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d)
 all: before_build $(BIN_DIR)/$(NAME)
 
 .PHONY: run
-run: $(BIN_DIR)/$(NAME)
+run: all
 	./$(BIN_DIR)/$(NAME)
 
 .PHONY: clean
