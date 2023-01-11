@@ -6,10 +6,12 @@
 #include <cstring>
 #include <iostream>
 #include <set>
+
 #include "VulkanInstance.h"
 #include "log.h"
 #include "defines.h"
 #include "Window.h"
+#include "SwapChainManager.h"
 
 namespace Vulkan {
 
@@ -287,7 +289,7 @@ bool VulkanInstance::is_physical_device_suitable(VkPhysicalDevice device)
 		}
 	}
 
-	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete() && meets_extensions_requirements;
+	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete() && meets_extensions_requirements && SwapChainManager::is_device_capable(device);
 }
 
 VkPhysicalDevice VulkanInstance::pick_best_device(const std::vector<VkPhysicalDevice> &devices)
