@@ -12,10 +12,11 @@
 
 namespace Vulkan {
 
-VkSwapchainKHR			SwapchainManager::_swapchain;
-std::vector<VkImage>	SwapchainManager::_swapchain_images;
-VkFormat				SwapchainManager::_swapchain_image_format;
-VkExtent2D				SwapchainManager::_swapchain_extent;
+VkSwapchainKHR				SwapchainManager::_swapchain;
+std::vector<VkImage>		SwapchainManager::_swapchain_images;
+std::vector<VkImageView>	SwapchainManager::_swapchain_image_views;
+VkFormat					SwapchainManager::_swapchain_image_format;
+VkExtent2D					SwapchainManager::_swapchain_extent;
 
 bool SwapchainManager::is_device_capable(VkPhysicalDevice device)
 {
@@ -145,6 +146,35 @@ bool SwapchainManager::initialize()
 
 void SwapchainManager::shutdown()
 {
+	for (auto& image_view : swapchain_image_views())
+		vkDestroyImageView(VulkanInstance::logical_device(), image_view, nullptr);
 	vkDestroySwapchainKHR(VulkanInstance::logical_device(), swapchain(), nullptr);
+}
+
+void SwapchainManager::create_image_views()
+{
+	swapchain_image_views().resize(swapchain_images().size());
+
+	for (size_t i = 0; i < swapchain_images().size(); i++) {
+		VkImageViewCreateInfo create_infos{};
+		create_infos.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		create_infos.image = swapchain_images()[i];
+		create_infos.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		create_infos.format = swapchain_image_format();
+		create_infos.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		create_infos.subresourceRange.baseArrayLayer = 0;
+		create_infos.subresourceRange.baseMipLevel = 0;
+		create_infos.subresourceRange.layerCount = 1;
+		create_infos.subresourceRange.levelCount = 1;
+
+		if (vkCreateImageView(VulkanInstance::logical_device(), &create_infos, nullptr, &_swapchain_image_views[i]) != VK_SUCCESS) {
+			CORE_ERROR("Couldn't create a swapchain image view!");
+			return ;
+		}
+	}
 }
 }
