@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <set>
 #include "VulkanInstance.h"
 #include "log.h"
 #include "defines.h"
@@ -17,6 +18,7 @@ VkDebugUtilsMessengerEXT	VulkanInstance::_debug_messenger;
 VkPhysicalDevice			VulkanInstance::_physical_device;
 VkDevice					VulkanInstance::_logical_device;
 VkQueue						VulkanInstance::_graphics_queue;
+VkQueue						VulkanInstance::_present_queue;
 
 bool VulkanInstance::initialize()
 {
@@ -263,7 +265,7 @@ bool VulkanInstance::is_physical_device_suitable(VkPhysicalDevice device)
 	vkGetPhysicalDeviceProperties(device, &properties);
 	//VkPhysicalDeviceFeatures features{};
 	//vkGetPhysicalDeviceFeatures(device, &features);
-	QueueFamilyIndicies queue_families = get_queues_for_device(device);
+	QueueFamilyIndices queue_families = get_queues_for_device(device);
 
 	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete();
 }
@@ -312,19 +314,24 @@ u32 VulkanInstance::rate_physical_device(VkPhysicalDevice device)
 	return score;
 }
 
-VulkanInstance::QueueFamilyIndicies VulkanInstance::get_queues_for_device(VkPhysicalDevice device)
+VulkanInstance::QueueFamilyIndices VulkanInstance::get_queues_for_device(VkPhysicalDevice device)
 {
 	u32 queue_family_count = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
 	std::vector<VkQueueFamilyProperties> properties(queue_family_count);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, properties.data());
 
-	QueueFamilyIndicies indices{};
+	QueueFamilyIndices indices{};
 	u32 i = 0;
 	for (const auto &queue_family: properties)
 	{
 		if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 			indices.graphics_index = i;
+
+		VkBool32 present_support = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Window::surface(), &present_support);
+		if (present_support)
+			indices.present_index = i;
 
 		if (indices.is_complete())
 			break;
@@ -336,21 +343,27 @@ VulkanInstance::QueueFamilyIndicies VulkanInstance::get_queues_for_device(VkPhys
 
 bool VulkanInstance::init_logical_device()
 {
-	QueueFamilyIndicies queues = get_queues_for_device(physical_device());
+	QueueFamilyIndices queues = get_queues_for_device(physical_device());
 
-	VkDeviceQueueCreateInfo queue_infos{};
-	queue_infos.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queue_infos.queueFamilyIndex = queues.graphics_index.value();
-	queue_infos.queueCount = 1;
+	std::vector<VkDeviceQueueCreateInfo> queues_infos;
+	std::set<uint32_t> unique_queue_families = {queues.graphics_index.value(), queues.present_index.value()};
+
 	float queue_priority = 1.0f;
-	queue_infos.pQueuePriorities = &queue_priority;
+	for (uint32_t queue_family : unique_queue_families) {
+		VkDeviceQueueCreateInfo queue_info{};
+		queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queue_info.queueFamilyIndex = queue_family;
+		queue_info.queueCount = 1;
+		queue_info.pQueuePriorities = &queue_priority;
+		queues_infos.push_back(queue_info);
+	}
 
 	VkPhysicalDeviceFeatures device_features{};
 
 	VkDeviceCreateInfo device_infos{};
 	device_infos.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	device_infos.pQueueCreateInfos = &queue_infos;
-	device_infos.queueCreateInfoCount = 1;
+	device_infos.pQueueCreateInfos = queues_infos.data();
+	device_infos.queueCreateInfoCount = queues_infos.size();
 	device_infos.pEnabledFeatures = &device_features;
 	device_infos.enabledExtensionCount = 0;
 	device_infos.enabledLayerCount = 0;
@@ -367,6 +380,7 @@ bool VulkanInstance::init_logical_device()
 	}
 
 	vkGetDeviceQueue(logical_device(), queues.graphics_index.value(), 0, &_graphics_queue);
+	vkGetDeviceQueue(logical_device(), queues.present_index.value(), 0, &_present_queue);
 
 	return true;
 }

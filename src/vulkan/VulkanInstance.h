@@ -18,29 +18,34 @@ public:
 	//----
 	// ON/OFF
 	//----
-	static bool initialize();
-	static void shutdown();
+	static bool	initialize();
+	static void	shutdown();
 
 	//----
 	// Getters
 	//----
-	static VkInstance		instance() { return _instance; }
-	static VkPhysicalDevice	physical_device() { return _physical_device; }
-	static VkDevice			logical_device() { return _logical_device; }
+	static VkInstance		instance()			{ return _instance; }
+	static VkPhysicalDevice	physical_device()	{ return _physical_device; }
+	static VkDevice			logical_device()	{ return _logical_device; }
 
 private:	// Types
-	struct QueueFamilyIndicies
+	struct QueueFamilyIndices
 	{
-		std::optional<u32> graphics_index;
+	private:
+		using index = std::optional<u32>;
 
-		bool is_complete() { return graphics_index.has_value(); }
+	public:
+		index	graphics_index;
+		index	present_index;
+
+		bool is_complete() const { return graphics_index.has_value() && present_index.has_value(); }
 	};
 
 private:	// Methods
 	//----
 	// Initialization
 	//----
-	static bool init_instance();
+	static bool	init_instance();
 
 	//---
 	// Physical Device management
@@ -50,7 +55,7 @@ private:	// Methods
 	static bool								is_physical_device_suitable(VkPhysicalDevice device);
 	static VkPhysicalDevice					pick_best_device(const std::vector<VkPhysicalDevice>& devices);
 	static u32								rate_physical_device(VkPhysicalDevice device);
-	static QueueFamilyIndicies				get_queues_for_device(VkPhysicalDevice device);
+	static QueueFamilyIndices				get_queues_for_device(VkPhysicalDevice device);
 
 	//----
 	// Logical Device management
@@ -73,8 +78,8 @@ private:	// Methods
 	//----
 	// Getters
 	//----
-	static VkDebugUtilsMessengerEXT	debug_messenger() { return _debug_messenger; }
-	static VkQueue					graphics_queue() { return _graphics_queue; }
+	static VkDebugUtilsMessengerEXT	debug_messenger()	{ return _debug_messenger; }
+	static VkQueue					graphics_queue()	{ return _graphics_queue; }
 
 private:	// Members
 	static VkInstance				_instance;
@@ -82,6 +87,7 @@ private:	// Members
 	static VkPhysicalDevice			_physical_device;
 	static VkDevice					_logical_device;
 	static VkQueue					_graphics_queue;
+	static VkQueue					_present_queue;
 
 };
 
