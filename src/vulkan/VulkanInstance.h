@@ -12,6 +12,18 @@
 
 namespace Vulkan {
 
+struct QueueFamilyIndices
+{
+private:
+	using index = std::optional<u32>;
+
+public:
+	index	graphics_index;
+	index	present_index;
+
+	bool is_complete() const { return graphics_index.has_value() && present_index.has_value(); }
+};
+
 class VulkanInstance
 {
 public:
@@ -28,18 +40,7 @@ public:
 	static VkPhysicalDevice	physical_device()	{ return _physical_device; }
 	static VkDevice			logical_device()	{ return _logical_device; }
 
-private:	// Types
-	struct QueueFamilyIndices
-	{
-	private:
-		using index = std::optional<u32>;
-
-	public:
-		index	graphics_index;
-		index	present_index;
-
-		bool is_complete() const { return graphics_index.has_value() && present_index.has_value(); }
-	};
+	static QueueFamilyIndices	get_queues_for_device(VkPhysicalDevice device);
 
 private:	// Methods
 	//----
@@ -55,7 +56,6 @@ private:	// Methods
 	static bool								is_physical_device_suitable(VkPhysicalDevice device);
 	static VkPhysicalDevice					pick_best_device(const std::vector<VkPhysicalDevice>& devices);
 	static u32								rate_physical_device(VkPhysicalDevice device);
-	static QueueFamilyIndices				get_queues_for_device(VkPhysicalDevice device);
 
 	//----
 	// Logical Device management

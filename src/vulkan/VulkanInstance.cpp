@@ -11,7 +11,7 @@
 #include "log.h"
 #include "defines.h"
 #include "Window.h"
-#include "SwapChainManager.h"
+#include "SwapchainManager.h"
 
 namespace Vulkan {
 
@@ -289,7 +289,7 @@ bool VulkanInstance::is_physical_device_suitable(VkPhysicalDevice device)
 		}
 	}
 
-	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete() && meets_extensions_requirements && SwapChainManager::is_device_capable(device);
+	return properties.apiVersion >= VK_API_VERSION_1_3 && queue_families.is_complete() && meets_extensions_requirements && SwapchainManager::is_device_capable(device);
 }
 
 VkPhysicalDevice VulkanInstance::pick_best_device(const std::vector<VkPhysicalDevice> &devices)
@@ -302,8 +302,7 @@ VkPhysicalDevice VulkanInstance::pick_best_device(const std::vector<VkPhysicalDe
 	for (auto &device: devices)
 	{
 		u32 score = rate_physical_device(device);
-		if (score > best_score)
-		{
+		if (score > best_score) {
 			best_score = score;
 			best = device;
 		}
@@ -336,7 +335,7 @@ u32 VulkanInstance::rate_physical_device(VkPhysicalDevice device)
 	return score;
 }
 
-VulkanInstance::QueueFamilyIndices VulkanInstance::get_queues_for_device(VkPhysicalDevice device)
+QueueFamilyIndices VulkanInstance::get_queues_for_device(VkPhysicalDevice device)
 {
 	u32 queue_family_count = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);

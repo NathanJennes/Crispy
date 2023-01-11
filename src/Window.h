@@ -25,7 +25,7 @@ public:
 	//----
 	// Initialization
 	//----
-	static bool	initialize(const std::string& name, i32 x, i32 y, i32 width, i32 height);
+	static bool	initialize(const std::string& name, i32 x, i32 y, u32 width, u32 height);
 	static bool	initialize_surface();
 	static void	shutdown();
 
@@ -40,6 +40,8 @@ public:
 	static bool			initialized() 	{ return _initialized; };
 	static bool			should_close()	{ return _should_close; };
 	static VkSurfaceKHR	surface()		{ return _surface; };
+	static u32			width()			{ return _width; }
+	static u32			height()		{ return _height; }
 
 private:	// Methods
 	//----
@@ -51,8 +53,6 @@ private:	// Methods
 	// Getters
 	//----
 	static const std::string&	name()					{ return _name; }
-	static i32					width()					{ return _width; }
-	static i32					height()				{ return _height; }
 	static Display				*display()				{ return _display; }
 	static xcb_connection_t		*connexion()			{ return _connection; }
 	static xcb_window_t			window()				{ return _window; }
@@ -64,7 +64,7 @@ private:	// Members
 	static bool			_should_close;
 	static bool			_initialized;
 	static std::string	_name;
-	static i32			_width, _height;
+	static u32			_width, _height;
 
 	//----
 	// X11

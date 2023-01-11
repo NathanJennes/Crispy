@@ -14,7 +14,7 @@ namespace Vulkan {
 bool				Window::_should_close = false;
 bool				Window::_initialized = false;
 std::string			Window::_name;
-i32					Window::_width, Window::_height;
+u32					Window::_width, Window::_height;
 
 Display				*Window::_display = nullptr;
 xcb_connection_t	*Window::_connection = nullptr;
@@ -25,7 +25,7 @@ xcb_atom_t			Window::_wm_delete_win_mutex = 0;
 
 VkSurfaceKHR		Window::_surface = VK_NULL_HANDLE;
 
-bool Window::initialize(const std::string &name, i32 x, i32 y, i32 width, i32 height)
+bool Window::initialize(const std::string &name, i32 x, i32 y, u32 width, u32 height)
 {
 	_name = name;
 	_width = width;
