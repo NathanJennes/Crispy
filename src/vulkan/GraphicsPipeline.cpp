@@ -11,9 +11,13 @@
 namespace Vulkan {
 
 VkPipelineLayout	GraphicsPipeline::_pipeline_layout;
+VkRenderPass		GraphicsPipeline::_render_pass;
 
 bool GraphicsPipeline::initialize()
 {
+	if (!initialize_render_pass())
+		return false;
+
 	auto vert_code = read_file("obj/shaders/shader.vert.spv");
 	auto frag_code = read_file("obj/shaders/shader.frag.spv");
 
@@ -166,6 +170,43 @@ VkShaderModule GraphicsPipeline::create_shader_module(const std::vector<char> &c
 
 void GraphicsPipeline::shutdown()
 {
+	vkDestroyRenderPass(VulkanInstance::logical_device(), render_pass(), nullptr);
 	vkDestroyPipelineLayout(VulkanInstance::logical_device(), pipeline_layout(), nullptr);
+}
+
+bool GraphicsPipeline::initialize_render_pass()
+{
+	VkAttachmentDescription color_attachment{};
+	color_attachment.format = SwapchainManager::swapchain_image_format();
+	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference color_attachment_ref{};
+	color_attachment_ref.attachment = 0;
+	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment_ref;
+
+	VkRenderPassCreateInfo create_infos{};
+	create_infos.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	create_infos.attachmentCount = 1;
+	create_infos.pAttachments = &color_attachment;
+	create_infos.subpassCount = 1;
+	create_infos.pSubpasses = &subpass;
+
+	if (vkCreateRenderPass(VulkanInstance::logical_device(), &create_infos, nullptr, &_render_pass) != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create the render pass!");
+		return false;
+	}
+
+	return true;
 }
 } // Vulkan
