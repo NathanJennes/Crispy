@@ -12,6 +12,7 @@ namespace Vulkan {
 
 VkPipelineLayout	GraphicsPipeline::_pipeline_layout;
 VkRenderPass		GraphicsPipeline::_render_pass;
+VkPipeline			GraphicsPipeline::_pipeline;
 
 bool GraphicsPipeline::initialize()
 {
@@ -145,7 +146,30 @@ bool GraphicsPipeline::initialize()
 		return false;
 	}
 
+	VkGraphicsPipelineCreateInfo create_infos{};
+	create_infos.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	create_infos.stageCount = 2;
+	create_infos.pStages = shader_stages;
+	create_infos.pVertexInputState = &vertex_input_create_infos;
+	create_infos.pInputAssemblyState = &input_assembly_create_infos;
+	create_infos.pViewportState = &viewport_state_create_infos;
+	create_infos.pRasterizationState = &rasterizer;
+	create_infos.pMultisampleState = &multisampling;
+	create_infos.pDepthStencilState = nullptr;
+	create_infos.pColorBlendState = &color_blending;
+	create_infos.pDynamicState = &dynamic_state_create_infos;
+	create_infos.layout = pipeline_layout();
+	create_infos.renderPass = render_pass();
+	create_infos.subpass = 0;
+	create_infos.basePipelineHandle = VK_NULL_HANDLE;
+	create_infos.basePipelineIndex = -1;
 
+	if (vkCreateGraphicsPipelines(VulkanInstance::logical_device(), VK_NULL_HANDLE, 1, &create_infos, nullptr, &_pipeline) != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create the graphics pipeline!");
+		vkDestroyShaderModule(VulkanInstance::logical_device(), vert_shader_module, nullptr);
+		vkDestroyShaderModule(VulkanInstance::logical_device(), frag_shader_module, nullptr);
+		return false;
+	}
 
 	vkDestroyShaderModule(VulkanInstance::logical_device(), vert_shader_module, nullptr);
 	vkDestroyShaderModule(VulkanInstance::logical_device(), frag_shader_module, nullptr);
@@ -170,8 +194,9 @@ VkShaderModule GraphicsPipeline::create_shader_module(const std::vector<char> &c
 
 void GraphicsPipeline::shutdown()
 {
-	vkDestroyRenderPass(VulkanInstance::logical_device(), render_pass(), nullptr);
+	vkDestroyPipeline(VulkanInstance::logical_device(), pipeline(), nullptr);
 	vkDestroyPipelineLayout(VulkanInstance::logical_device(), pipeline_layout(), nullptr);
+	vkDestroyRenderPass(VulkanInstance::logical_device(), render_pass(), nullptr);
 }
 
 bool GraphicsPipeline::initialize_render_pass()

@@ -28,10 +28,12 @@ private:	// Methods
 	//----
 	static VkPipelineLayout	pipeline_layout()	{ return _pipeline_layout; }
 	static VkRenderPass		render_pass()		{ return _render_pass; }
+	static VkPipeline		pipeline()			{ return _pipeline; }
 
 private:	// Members
 	static VkPipelineLayout		_pipeline_layout;
 	static VkRenderPass			_render_pass;
+	static VkPipeline			_pipeline;
 };
 } // Vulkan
 
