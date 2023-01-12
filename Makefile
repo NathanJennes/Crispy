@@ -19,7 +19,14 @@ LD_FLAGS	+=		-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon
 
 SRCS		:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
 OBJS		:=		$(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRCS:.cpp=)))
-DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d)
+
+SHADER_DIR			:=		shaders
+SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
+COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
+
+SPIRV_COMPILER		:=	$(VULKAN_SDK)/bin/glslc
+
+DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -type d)
 
 .PHONY: all
 all: before_build $(BIN_DIR)/$(NAME)
@@ -44,12 +51,20 @@ before_build:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(addprefix $(OBJ_DIR)/, $(DIRECTORIES))
 
-$(BIN_DIR)/$(NAME): $(OBJS) Makefile
+$(BIN_DIR)/$(NAME): $(COMPILED_SHADERS) $(OBJS) Makefile
 	@echo "creating executable $(NAME)..."
 	@$(CXX) $(OBJS) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS)
 
 $(OBJ_DIR)/%.o: %.cpp Makefile
 	@echo   $<...
 	@$(CXX) $< $(CXX_FLAGS) -c -o $@
+
+$(OBJ_DIR)/%.vert.spv: %.vert.glsl Makefile
+	@echo   $<...
+	@$(SPIRV_COMPILER) -fshader-stage=vertex -o $@ $<
+
+$(OBJ_DIR)/%.frag.spv: %.frag.glsl Makefile
+	@echo   $<...
+	@$(SPIRV_COMPILER) -fshader-stage=fragment -o $@ $<
 
 -include $(OBJS:.o=.d)

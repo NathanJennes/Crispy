@@ -3,6 +3,10 @@
 //
 
 #include "utils.h"
+#include "log.h"
+#include <fstream>
+
+namespace Vulkan {
 
 f64 get_absolute_time()
 {
@@ -21,4 +25,22 @@ void my_sleep(u64 us)
 #else
 	usleep(us);
 #endif
+}
+
+std::vector<char> read_file(const std::string& file_name)
+{
+	std::ifstream file(file_name, std::ios::ate | std::ios::binary);
+	if (!file.is_open()) {
+		CORE_WARN("Couldn't read file [%s]", file_name.c_str());
+		return {};
+	}
+
+	size_t file_size = file.tellg();
+	std::vector<char> buffer(file_size);
+	file.seekg(0);
+	file.read(buffer.data(), file_size);
+	file.close();
+	return buffer;
+}
+
 }

@@ -6,6 +6,7 @@
 
 #include "vulkan/VulkanInstance.h"
 #include "vulkan/SwapchainManager.h"
+#include "vulkan/GraphicsPipeline.h"
 
 namespace Vulkan {
 
@@ -15,11 +16,14 @@ bool Renderer::initialize()
 		return false;
 	if (!SwapchainManager::initialize())
 		return false;
+	if (!GraphicsPipeline::initialize())
+		return false;
 	return true;
 }
 
 void Renderer::shutdown()
 {
+	GraphicsPipeline::shutdown();
 	SwapchainManager::shutdown();
 	VulkanInstance::shutdown();
 }

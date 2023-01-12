@@ -24,6 +24,11 @@ public:
 	//----
 	static bool	is_device_capable(VkPhysicalDevice device);
 
+	//----
+	// Getters
+	//----
+	static VkExtent2D	swapchain_extent()	{ return _swapchain_extent; };
+
 private:	// Types
 	struct SwapchainSupportDetails
 	{
@@ -54,7 +59,6 @@ private:	// Methods
 	static std::vector<VkImage>		swapchain_images()			{ return _swapchain_images; };
 	static std::vector<VkImageView>	swapchain_image_views()		{ return _swapchain_image_views; };
 	static VkFormat					swapchain_image_format()	{ return _swapchain_image_format; };
-	static VkExtent2D				swapchain_extent()			{ return _swapchain_extent; };
 
 private:	// Members
 	static VkSwapchainKHR			_swapchain;
