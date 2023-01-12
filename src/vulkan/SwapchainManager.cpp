@@ -9,12 +9,14 @@
 #include "Window.h"
 #include "log.h"
 #include "VulkanInstance.h"
+#include "GraphicsPipeline.h"
 
 namespace Vulkan {
 
 VkSwapchainKHR				SwapchainManager::_swapchain;
 std::vector<VkImage>		SwapchainManager::_swapchain_images;
 std::vector<VkImageView>	SwapchainManager::_swapchain_image_views;
+std::vector<VkFramebuffer>	SwapchainManager::_swapchain_framebuffers;
 VkFormat					SwapchainManager::_swapchain_image_format;
 VkExtent2D					SwapchainManager::_swapchain_extent;
 
@@ -146,6 +148,8 @@ bool SwapchainManager::initialize()
 
 void SwapchainManager::shutdown()
 {
+	for (auto& framebuffer : swapchain_framebuffers())
+		vkDestroyFramebuffer(VulkanInstance::logical_device(), framebuffer, nullptr);
 	for (auto& image_view : swapchain_image_views())
 		vkDestroyImageView(VulkanInstance::logical_device(), image_view, nullptr);
 	vkDestroySwapchainKHR(VulkanInstance::logical_device(), swapchain(), nullptr);
@@ -176,5 +180,28 @@ void SwapchainManager::create_image_views()
 			return ;
 		}
 	}
+}
+
+bool SwapchainManager::create_famebuffers()
+{
+	swapchain_framebuffers().resize(swapchain_image_views().size());
+
+	for (size_t i = 0; i < swapchain_image_views().size(); i++) {
+		VkFramebufferCreateInfo create_infos{};
+		create_infos.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		create_infos.renderPass = GraphicsPipeline::render_pass();
+		create_infos.attachmentCount = 1;
+		create_infos.pAttachments = &swapchain_image_views()[i];
+		create_infos.width = swapchain_extent().width;
+		create_infos.height = swapchain_extent().height;
+		create_infos.layers = 1;
+
+		if (vkCreateFramebuffer(VulkanInstance::logical_device(), &create_infos, nullptr, &swapchain_framebuffers()[i]) != VK_SUCCESS) {
+			CORE_DEBUG("Couldn't create a framebuffer!");
+			return false;
+		}
+	}
+
+	return true;
 }
 }

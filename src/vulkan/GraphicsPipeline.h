@@ -19,6 +19,12 @@ public:
 	static bool initialize();
 	static void shutdown();
 
+	//----
+	// Getters
+	//----
+	static VkRenderPass		render_pass()		{ return _render_pass; }
+	static VkPipeline		pipeline()			{ return _pipeline; }
+
 private:	// Methods
 	static VkShaderModule	create_shader_module(const std::vector<char>& code);
 	static bool				initialize_render_pass();
@@ -27,8 +33,6 @@ private:	// Methods
 	// Getters
 	//----
 	static VkPipelineLayout	pipeline_layout()	{ return _pipeline_layout; }
-	static VkRenderPass		render_pass()		{ return _render_pass; }
-	static VkPipeline		pipeline()			{ return _pipeline; }
 
 private:	// Members
 	static VkPipelineLayout		_pipeline_layout;
