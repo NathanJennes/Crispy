@@ -143,6 +143,8 @@ bool SwapchainManager::initialize()
 	_swapchain_extent = extent;
 	_swapchain_image_format = surface_format.format;
 
+	create_image_views();
+
 	return true;
 }
 
