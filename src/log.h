@@ -47,7 +47,7 @@ void log_fatal(const char *message, ...);
 #endif
 
 #ifdef DEBUG
-# define CORE_ERROR(message, ...) Vulkan::log_error("%s:%s", __FILE__, __LINE__); Vulkan::log_error(message, ##__VA_ARGS__);
+# define CORE_ERROR(message, ...) Vulkan::log_error("%s:%d", __FILE__, __LINE__); Vulkan::log_error(message, ##__VA_ARGS__);
 #else
 # define CORE_ERROR(message, ...) Vulkan::log_error(message, ##__VA_ARGS__);
 #endif

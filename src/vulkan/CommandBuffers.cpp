@@ -10,10 +10,10 @@
 
 namespace Vulkan {
 
-VkCommandBuffer	CommandBuffers::_command_buffer;
-VkCommandPool	CommandBuffers::_command_pool;
+std::vector<VkCommandBuffer>	CommandBuffers::_command_buffers;
+VkCommandPool					CommandBuffers::_command_pool;
 
-bool CommandBuffers::initialize()
+bool CommandBuffers::initialize(u32 frames_in_flight_count)
 {
 	QueueFamilyIndices queue_indices = VulkanInstance::get_queues_for_device(VulkanInstance::physical_device());
 
@@ -31,9 +31,10 @@ bool CommandBuffers::initialize()
 	alloc_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	alloc_infos.commandPool = command_pool();
 	alloc_infos.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	alloc_infos.commandBufferCount = 1;
+	alloc_infos.commandBufferCount = frames_in_flight_count;
 
-	if (vkAllocateCommandBuffers(VulkanInstance::logical_device(), &alloc_infos, &_command_buffer) != VK_SUCCESS) {
+	command_buffers().resize(frames_in_flight_count);
+	if (vkAllocateCommandBuffers(VulkanInstance::logical_device(), &alloc_infos, command_buffers().data()) != VK_SUCCESS) {
 		CORE_ERROR("Couldn't create the command buffer!");
 		return false;
 	}
@@ -43,7 +44,7 @@ bool CommandBuffers::initialize()
 
 void CommandBuffers::shutdown()
 {
-	vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), 1, &_command_buffer);
+	vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), command_buffers().size(), command_buffers().data());
 	vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
 }
 

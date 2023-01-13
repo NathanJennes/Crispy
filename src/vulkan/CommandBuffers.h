@@ -7,6 +7,7 @@
 
 #include <vulkan/vulkan.h>
 #include "defines.h"
+#include <vector>
 
 namespace Vulkan {
 
@@ -16,7 +17,7 @@ public:
 	//----
 	// Initialization
 	//----
-	static bool	initialize();
+	static bool	initialize(u32 frames_in_flight_count);
 	static void	shutdown();
 
 	//----
@@ -27,7 +28,8 @@ public:
 	//----
 	// Getters
 	//----
-	static VkCommandBuffer&	command_buffer()	{ return _command_buffer; }
+	static std::vector<VkCommandBuffer>&	command_buffers()	{ return _command_buffers; }
+	static VkCommandBuffer&					get(u32 index)		{ return _command_buffers[index]; }
 
 private:	// Methods
 	//----
@@ -36,8 +38,8 @@ private:	// Methods
 	static VkCommandPool&	command_pool()		{ return _command_pool; }
 
 private:	// Members
-	static VkCommandBuffer	_command_buffer;
-	static VkCommandPool	_command_pool;
+	static std::vector<VkCommandBuffer>	_command_buffers;
+	static VkCommandPool				_command_pool;
 };
 } // Vulkan
 

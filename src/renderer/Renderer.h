@@ -6,6 +6,8 @@
 #define RENDERER_H
 
 #include <vulkan/vulkan.h>
+#include <vector>
+#include "defines.h"
 
 namespace Vulkan {
 
@@ -23,14 +25,19 @@ private:	// Methods
 	//----
 	// Getters
 	//----
-	static VkSemaphore&	image_available_semaphore()	{ return _image_available_semaphore; }
-	static VkSemaphore&	render_finished_semaphore()	{ return _render_finished_semaphore; }
-	static VkFence&		in_flight_fence()			{ return _in_flight_fence; }
+	static std::vector<VkSemaphore>&	image_available_semaphores()	{ return _image_available_semaphores; }
+	static std::vector<VkSemaphore>&	render_finished_semaphores()	{ return _render_finished_semaphores; }
+	static std::vector<VkFence>&		in_flight_fences()				{ return _in_flight_fences; }
+	static u32							frames_in_flight_count()		{ return _frames_in_flight_count; }
+	static u32							current_frame()					{ return _current_frame; }
 
 private:	// Members
-	static VkSemaphore	_image_available_semaphore;
-	static VkSemaphore	_render_finished_semaphore;
-	static VkFence		_in_flight_fence;
+	static std::vector<VkSemaphore>	_image_available_semaphores;
+	static std::vector<VkSemaphore>	_render_finished_semaphores;
+	static std::vector<VkFence>		_in_flight_fences;
+
+	static const u32				_frames_in_flight_count;
+	static u32						_current_frame;
 };
 
 }
