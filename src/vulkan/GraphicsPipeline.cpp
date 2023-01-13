@@ -220,12 +220,22 @@ bool GraphicsPipeline::initialize_render_pass()
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &color_attachment_ref;
 
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
 	VkRenderPassCreateInfo create_infos{};
 	create_infos.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	create_infos.attachmentCount = 1;
 	create_infos.pAttachments = &color_attachment;
 	create_infos.subpassCount = 1;
 	create_infos.pSubpasses = &subpass;
+	create_infos.dependencyCount = 1;
+	create_infos.pDependencies = &dependency;
 
 	if (vkCreateRenderPass(VulkanInstance::logical_device(), &create_infos, nullptr, &_render_pass) != VK_SUCCESS) {
 		CORE_ERROR("Couldn't create the render pass!");

@@ -37,11 +37,11 @@ public:
 	//----
 	// Getters
 	//----
-	static bool			initialized() 	{ return _initialized; };
-	static bool			should_close()	{ return _should_close; };
-	static VkSurfaceKHR	surface()		{ return _surface; };
-	static u32			width()			{ return _width; }
-	static u32			height()		{ return _height; }
+	static bool					initialized() 	{ return _initialized; };
+	static bool					should_close()	{ return _should_close; };
+	static const VkSurfaceKHR&	surface()		{ return _surface; };
+	static u32					width()			{ return _width; }
+	static u32					height()		{ return _height; }
 
 private:	// Methods
 	//----
@@ -55,10 +55,10 @@ private:	// Methods
 	static const std::string&	name()					{ return _name; }
 	static Display				*display()				{ return _display; }
 	static xcb_connection_t		*connexion()			{ return _connection; }
-	static xcb_window_t			window()				{ return _window; }
+	static xcb_window_t&		window()				{ return _window; }
 	static xcb_screen_t			*screen()				{ return _screen; }
-	static xcb_atom_t			wm_protocols_mutex()	{ return _wm_protocols_mutex; }
-	static xcb_atom_t			wm_delete_win_mutex()	{ return _wm_delete_win_mutex; }
+	static xcb_atom_t&			wm_protocols_mutex()	{ return _wm_protocols_mutex; }
+	static xcb_atom_t&			wm_delete_win_mutex()	{ return _wm_delete_win_mutex; }
 
 private:	// Members
 	static bool			_should_close;

@@ -43,10 +43,11 @@ bool CommandBuffers::initialize()
 
 void CommandBuffers::shutdown()
 {
+	vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), 1, &_command_buffer);
 	vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
 }
 
-void CommandBuffers::recore_command_buffer(VkCommandBuffer command_buffer, u32 image_index)
+void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index)
 {
 	VkCommandBufferBeginInfo begin_infos{};
 	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

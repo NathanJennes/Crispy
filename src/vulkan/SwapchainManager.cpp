@@ -137,9 +137,8 @@ bool SwapchainManager::initialize()
 	}
 
 	vkGetSwapchainImagesKHR(VulkanInstance::logical_device(), swapchain(), &image_count, nullptr);
-	swapchain_images().reserve(image_count);
+	swapchain_images().resize(image_count);
 	vkGetSwapchainImagesKHR(VulkanInstance::logical_device(), swapchain(), &image_count, swapchain_images().data());
-
 	_swapchain_extent = extent;
 	_swapchain_image_format = surface_format.format;
 
@@ -184,7 +183,7 @@ void SwapchainManager::create_image_views()
 	}
 }
 
-bool SwapchainManager::create_famebuffers()
+bool SwapchainManager::create_framebuffers()
 {
 	swapchain_framebuffers().resize(swapchain_image_views().size());
 

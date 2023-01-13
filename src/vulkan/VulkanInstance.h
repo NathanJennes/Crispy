@@ -36,9 +36,11 @@ public:
 	//----
 	// Getters
 	//----
-	static VkInstance		instance()			{ return _instance; }
-	static VkPhysicalDevice	physical_device()	{ return _physical_device; }
-	static VkDevice			logical_device()	{ return _logical_device; }
+	static VkInstance&		instance()			{ return _instance; }
+	static VkPhysicalDevice&	physical_device()	{ return _physical_device; }
+	static VkDevice&			logical_device()	{ return _logical_device; }
+	static VkQueue&			graphics_queue()	{ return _graphics_queue; }
+	static VkQueue&			present_queue()		{ return _present_queue; }
 
 	static QueueFamilyIndices	get_queues_for_device(VkPhysicalDevice device);
 
@@ -79,8 +81,7 @@ private:	// Methods
 	//----
 	// Getters
 	//----
-	static VkDebugUtilsMessengerEXT	debug_messenger()	{ return _debug_messenger; }
-	static VkQueue					graphics_queue()	{ return _graphics_queue; }
+	static VkDebugUtilsMessengerEXT&	debug_messenger()	{ return _debug_messenger; }
 
 private:	// Members
 	static VkInstance				_instance;

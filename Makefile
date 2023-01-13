@@ -13,9 +13,11 @@ CXX			:=		g++
 CXX_FLAGS	:=		-Wall -Wextra
 CXX_FLAGS	+=		-DDEBUG -DVK_USE_PLATFORM_XCB_KHR -g3 -MD
 CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include
+#CXX_FLAGS	+=		-fsanitize=address
 
 LD_FLAGS	:=		-L$(VULKAN_SDK)/lib -L/usr/lib64
 LD_FLAGS	+=		-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon
+#LD_FLAGS	+=		-fsanitize=address
 
 SRCS		:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
 OBJS		:=		$(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRCS:.cpp=)))

@@ -22,8 +22,8 @@ public:
 	//----
 	// Getters
 	//----
-	static VkRenderPass		render_pass()		{ return _render_pass; }
-	static VkPipeline		pipeline()			{ return _pipeline; }
+	static VkRenderPass&		render_pass()		{ return _render_pass; }
+	static VkPipeline&		pipeline()			{ return _pipeline; }
 
 private:	// Methods
 	static VkShaderModule	create_shader_module(const std::vector<char>& code);
@@ -32,7 +32,7 @@ private:	// Methods
 	//----
 	// Getters
 	//----
-	static VkPipelineLayout	pipeline_layout()	{ return _pipeline_layout; }
+	static VkPipelineLayout&	pipeline_layout()	{ return _pipeline_layout; }
 
 private:	// Members
 	static VkPipelineLayout		_pipeline_layout;

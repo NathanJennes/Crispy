@@ -3,9 +3,10 @@
 //
 
 #include "Application.h"
-#include "renderer/Renderer.h"
 #include "Window.h"
+#include "renderer/Renderer.h"
 #include "input.h"
+#include "vulkan/VulkanInstance.h"
 
 namespace Vulkan {
 
@@ -22,6 +23,7 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 
 Application::~Application()
 {
+	vkDeviceWaitIdle(VulkanInstance::logical_device());
 	Renderer::shutdown();
 	Window::shutdown();
 }
@@ -34,6 +36,7 @@ bool Application::should_close()
 void Application::update()
 {
 	Window::update();
+	Renderer::draw_frame();
 }
 
 }
