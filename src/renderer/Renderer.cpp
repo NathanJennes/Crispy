@@ -10,6 +10,7 @@
 #include "vulkan/GraphicsPipeline.h"
 #include "vulkan/CommandBuffers.h"
 #include "log.h"
+#include "Window.h"
 
 namespace Vulkan {
 
@@ -53,11 +54,20 @@ void Renderer::shutdown()
 void Renderer::draw_frame()
 {
 	vkWaitForFences(VulkanInstance::logical_device(), 1, &in_flight_fences()[current_frame()], VK_TRUE, std::numeric_limits<u64>::max());
-	vkResetFences(VulkanInstance::logical_device(), 1, &in_flight_fences()[current_frame()]);
 
 	u32 image_index;
-	vkAcquireNextImageKHR(VulkanInstance::logical_device(), SwapchainManager::swapchain(),
+	VkResult result = vkAcquireNextImageKHR(VulkanInstance::logical_device(), SwapchainManager::swapchain(),
 		std::numeric_limits<u64>::max(), image_available_semaphores()[current_frame()], VK_NULL_HANDLE, &image_index);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+		SwapchainManager::recreate();
+		return ;
+	} else if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't acquire next swapchain image for rendering!");
+		return ;
+	}
+
+	vkResetFences(VulkanInstance::logical_device(), 1, &in_flight_fences()[current_frame()]);
 
 	vkResetCommandBuffer(CommandBuffers::get(current_frame()), 0);
 	CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index);
@@ -88,8 +98,12 @@ void Renderer::draw_frame()
 	present_infos.pImageIndices = &image_index;
 	present_infos.pResults = nullptr;
 
-	if (vkQueuePresentKHR(VulkanInstance::present_queue(), &present_infos) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't present the finished rendered framebuffer!");
+	result = vkQueuePresentKHR(VulkanInstance::present_queue(), &present_infos);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || Window::has_resized()) {
+		SwapchainManager::recreate();
+	} else if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't present swap chain image!");
+		return ;
 	}
 
 	_current_frame = (current_frame() + 1) % frames_in_flight_count();

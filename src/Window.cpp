@@ -13,8 +13,9 @@ namespace Vulkan {
 
 bool				Window::_should_close = false;
 bool				Window::_initialized = false;
+bool				Window::_has_resized = false;
 std::string			Window::_name;
-u32					Window::_width, Window::_height;
+u32					Window::_width = 0, Window::_height = 0;
 
 Display				*Window::_display = nullptr;
 xcb_connection_t	*Window::_connection = nullptr;
@@ -143,6 +144,9 @@ bool Window::initialize_window(i32 x, i32 y)
 
 void Window::update()
 {
+	if (has_resized())
+		_has_resized = false;
+
 	if (should_close() || !initialized())
 		return ;
 
@@ -187,7 +191,14 @@ void Window::update()
 			} break;
 
 			case XCB_CONFIGURE_NOTIFY: {
-				// TODO: Resizing
+				// Window resizing
+				const xcb_configure_notify_event_t *cfgEvent = (const xcb_configure_notify_event_t *)event;
+				if (cfgEvent->width != width() || cfgEvent->height != height())
+				{
+					_width = cfgEvent->width;
+					_height = cfgEvent->height;
+					_has_resized = true;
+				}
 			} break;
 
 			case XCB_CLIENT_MESSAGE: {

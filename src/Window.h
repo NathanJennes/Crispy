@@ -37,9 +37,10 @@ public:
 	//----
 	// Getters
 	//----
-	static bool					initialized() 	{ return _initialized; };
-	static bool					should_close()	{ return _should_close; };
-	static const VkSurfaceKHR&	surface()		{ return _surface; };
+	static bool					initialized() 	{ return _initialized; }
+	static bool					should_close()	{ return _should_close; }
+	static bool					has_resized()	{ return _has_resized; }
+	static const VkSurfaceKHR&	surface()		{ return _surface; }
 	static u32					width()			{ return _width; }
 	static u32					height()		{ return _height; }
 
@@ -63,6 +64,7 @@ private:	// Methods
 private:	// Members
 	static bool			_should_close;
 	static bool			_initialized;
+	static bool			_has_resized;
 	static std::string	_name;
 	static u32			_width, _height;
 

@@ -18,7 +18,12 @@ public:
 	//----
 	static bool	initialize();
 	static void	shutdown();
+
+	//----
+	// Swapchains management
+	//----
 	static bool	create_framebuffers();
+	static bool recreate();
 
 	//----
 	// Compatibility checks
@@ -52,6 +57,12 @@ private:	// Methods
 	static VkSurfaceFormatKHR		choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 	static VkPresentModeKHR			choose_present_mode(const std::vector<VkPresentModeKHR>& available_modes);
 	static VkExtent2D				choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+	//----
+	// Swapchain creation and destruction
+	//----
+	static bool						create_swapchain();
+	static void						cleanup_swapchain();
 
 	//----
 	// Images
