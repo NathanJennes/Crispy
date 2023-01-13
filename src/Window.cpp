@@ -13,8 +13,10 @@ namespace Vulkan {
 
 bool				Window::_should_close = false;
 bool				Window::_initialized = false;
+bool				Window::_has_resized = false;
+bool				Window::_visible = true;
 std::string			Window::_name;
-u32					Window::_width, Window::_height;
+u32					Window::_width = 0, Window::_height = 0;
 
 Display				*Window::_display = nullptr;
 xcb_connection_t	*Window::_connection = nullptr;
@@ -95,7 +97,7 @@ bool Window::initialize_window(i32 x, i32 y)
 	// Listen for keyboard and mouse buttons
 	u32 event_values = XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_KEY_PRESS |
 					   XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_POINTER_MOTION |
-					   XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+					   XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_PROPERTY_CHANGE;
 
 	// Values to be sent over XCB
 	u32 value_list[] = {_screen->black_pixel, event_values};
@@ -143,6 +145,9 @@ bool Window::initialize_window(i32 x, i32 y)
 
 void Window::update()
 {
+	if (has_resized())
+		_has_resized = false;
+
 	if (should_close() || !initialized())
 		return ;
 
@@ -153,6 +158,11 @@ void Window::update()
 	// Poll events until NULL is returned
 	while (event != nullptr) {
 		switch (event->response_type & ~0x80) {
+			// Window uncovered (un-minimized or the application on top of it went away)
+			case XCB_EXPOSE: {
+				_visible = true;
+			}
+
 			// Keyboard key presses
 			case XCB_KEY_PRESS:
 			case XCB_KEY_RELEASE: {
@@ -187,7 +197,14 @@ void Window::update()
 			} break;
 
 			case XCB_CONFIGURE_NOTIFY: {
-				// TODO: Resizing
+				// Window resizing
+				const xcb_configure_notify_event_t *cfg_event = (const xcb_configure_notify_event_t *)event;
+				if (cfg_event->width != width() || cfg_event->height != height())
+				{
+					_width = cfg_event->width;
+					_height = cfg_event->height;
+					_has_resized = true;
+				}
 			} break;
 
 			case XCB_CLIENT_MESSAGE: {

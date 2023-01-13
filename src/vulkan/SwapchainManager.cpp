@@ -20,6 +20,32 @@ std::vector<VkFramebuffer>	SwapchainManager::_swapchain_framebuffers;
 VkFormat					SwapchainManager::_swapchain_image_format;
 VkExtent2D					SwapchainManager::_swapchain_extent;
 
+bool SwapchainManager::initialize()
+{
+	return create_swapchain();
+}
+
+void SwapchainManager::shutdown()
+{
+	cleanup_swapchain();
+}
+
+bool SwapchainManager::recreate()
+{
+	vkDeviceWaitIdle(VulkanInstance::logical_device());
+	cleanup_swapchain();
+
+	if (!create_swapchain()) {
+		CORE_ERROR("Couldn't to recreate the swapchain");
+		return false;
+	}
+	if (!create_framebuffers()) {
+		CORE_ERROR("Couldn't to recreate the swapchain");
+		return false;
+	}
+	return true;
+}
+
 bool SwapchainManager::is_device_capable(VkPhysicalDevice device)
 {
 	SwapchainSupportDetails details = get_device_swapchain_capabilities(device);
@@ -60,7 +86,7 @@ VkSurfaceFormatKHR SwapchainManager::choose_surface_format(const std::vector<VkS
 		}
 	}
 
-	CORE_WARN("Couldn't use the preferred image format for the swapchain");
+	CORE_DEBUG("Couldn't use the preferred image format for the swapchain");
 	return available_formats[0];
 }
 
@@ -71,7 +97,7 @@ VkPresentModeKHR SwapchainManager::choose_present_mode(const std::vector<VkPrese
 			return mode;
 	}
 
-	CORE_INFO("Couldn't use the preffered present mode for the swapchain");
+	CORE_DEBUG("Couldn't use the preffered present mode for the swapchain");
 	// The only guaranteed mode to be present
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
@@ -91,7 +117,66 @@ VkExtent2D SwapchainManager::choose_swap_extent(const VkSurfaceCapabilitiesKHR &
 	}
 }
 
-bool SwapchainManager::initialize()
+void SwapchainManager::create_image_views()
+{
+	swapchain_image_views().resize(swapchain_images().size());
+
+	for (size_t i = 0; i < swapchain_images().size(); i++) {
+		VkImageViewCreateInfo create_infos{};
+		create_infos.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		create_infos.image = swapchain_images()[i];
+		create_infos.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		create_infos.format = swapchain_image_format();
+		create_infos.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		create_infos.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		create_infos.subresourceRange.baseArrayLayer = 0;
+		create_infos.subresourceRange.baseMipLevel = 0;
+		create_infos.subresourceRange.layerCount = 1;
+		create_infos.subresourceRange.levelCount = 1;
+
+		if (vkCreateImageView(VulkanInstance::logical_device(), &create_infos, nullptr, &_swapchain_image_views[i]) != VK_SUCCESS) {
+			CORE_ERROR("Couldn't create a swapchain image view!");
+			return ;
+		}
+	}
+}
+
+bool SwapchainManager::create_framebuffers()
+{
+	swapchain_framebuffers().resize(swapchain_image_views().size());
+
+	for (size_t i = 0; i < swapchain_image_views().size(); i++) {
+		VkFramebufferCreateInfo create_infos{};
+		create_infos.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		create_infos.renderPass = GraphicsPipeline::render_pass();
+		create_infos.attachmentCount = 1;
+		create_infos.pAttachments = &swapchain_image_views()[i];
+		create_infos.width = swapchain_extent().width;
+		create_infos.height = swapchain_extent().height;
+		create_infos.layers = 1;
+
+		if (vkCreateFramebuffer(VulkanInstance::logical_device(), &create_infos, nullptr, &swapchain_framebuffers()[i]) != VK_SUCCESS) {
+			CORE_DEBUG("Couldn't create a framebuffer!");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void SwapchainManager::cleanup_swapchain()
+{
+	for (auto& framebuffer : swapchain_framebuffers())
+		vkDestroyFramebuffer(VulkanInstance::logical_device(), framebuffer, nullptr);
+	for (auto& image_view : swapchain_image_views())
+		vkDestroyImageView(VulkanInstance::logical_device(), image_view, nullptr);
+	vkDestroySwapchainKHR(VulkanInstance::logical_device(), swapchain(), nullptr);
+}
+
+bool SwapchainManager::create_swapchain()
 {
 	SwapchainSupportDetails swapchain_support = get_device_swapchain_capabilities(VulkanInstance::physical_device());
 
@@ -143,65 +228,6 @@ bool SwapchainManager::initialize()
 	_swapchain_image_format = surface_format.format;
 
 	create_image_views();
-
-	return true;
-}
-
-void SwapchainManager::shutdown()
-{
-	for (auto& framebuffer : swapchain_framebuffers())
-		vkDestroyFramebuffer(VulkanInstance::logical_device(), framebuffer, nullptr);
-	for (auto& image_view : swapchain_image_views())
-		vkDestroyImageView(VulkanInstance::logical_device(), image_view, nullptr);
-	vkDestroySwapchainKHR(VulkanInstance::logical_device(), swapchain(), nullptr);
-}
-
-void SwapchainManager::create_image_views()
-{
-	swapchain_image_views().resize(swapchain_images().size());
-
-	for (size_t i = 0; i < swapchain_images().size(); i++) {
-		VkImageViewCreateInfo create_infos{};
-		create_infos.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		create_infos.image = swapchain_images()[i];
-		create_infos.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		create_infos.format = swapchain_image_format();
-		create_infos.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		create_infos.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		create_infos.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		create_infos.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		create_infos.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		create_infos.subresourceRange.baseArrayLayer = 0;
-		create_infos.subresourceRange.baseMipLevel = 0;
-		create_infos.subresourceRange.layerCount = 1;
-		create_infos.subresourceRange.levelCount = 1;
-
-		if (vkCreateImageView(VulkanInstance::logical_device(), &create_infos, nullptr, &_swapchain_image_views[i]) != VK_SUCCESS) {
-			CORE_ERROR("Couldn't create a swapchain image view!");
-			return ;
-		}
-	}
-}
-
-bool SwapchainManager::create_framebuffers()
-{
-	swapchain_framebuffers().resize(swapchain_image_views().size());
-
-	for (size_t i = 0; i < swapchain_image_views().size(); i++) {
-		VkFramebufferCreateInfo create_infos{};
-		create_infos.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		create_infos.renderPass = GraphicsPipeline::render_pass();
-		create_infos.attachmentCount = 1;
-		create_infos.pAttachments = &swapchain_image_views()[i];
-		create_infos.width = swapchain_extent().width;
-		create_infos.height = swapchain_extent().height;
-		create_infos.layers = 1;
-
-		if (vkCreateFramebuffer(VulkanInstance::logical_device(), &create_infos, nullptr, &swapchain_framebuffers()[i]) != VK_SUCCESS) {
-			CORE_DEBUG("Couldn't create a framebuffer!");
-			return false;
-		}
-	}
 
 	return true;
 }
