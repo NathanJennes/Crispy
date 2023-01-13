@@ -35,8 +35,14 @@ bool Application::should_close()
 
 void Application::update()
 {
+	static std::vector<Vertex> verticies = {Vertex(0.0f, -0.5f, 1.0f, 1.0f, 1.0f),
+											Vertex(0.5f,  0.5f, 0.0f, 1.0f, 0.0f),
+											Vertex(-0.5f, 0.5f, 0.0f, 0.0f, 1.0f),
+											Vertex(0.0f, -0.5f, 1.0f, 1.0f, 1.0f),
+											Vertex(1.0f, -0.5f, 1.0f, 0.0f, 0.0f),
+											Vertex(0.5f,  0.5f, 0.0f, 1.0f, 0.0f)};
 	Window::update();
-	Renderer::draw_frame();
+	Renderer::draw(verticies);
 }
 
 }

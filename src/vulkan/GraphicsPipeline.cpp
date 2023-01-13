@@ -7,6 +7,7 @@
 #include "log.h"
 #include "VulkanInstance.h"
 #include "SwapchainManager.h"
+#include "renderer/Renderer.h"
 
 namespace Vulkan {
 
@@ -58,12 +59,15 @@ bool GraphicsPipeline::initialize()
 	dynamic_state_create_infos.dynamicStateCount = static_cast<u32>(dynamic_states.size());
 	dynamic_state_create_infos.pDynamicStates = dynamic_states.data();
 
+	auto binding_description = Vertex::get_binding_description();
+	auto attribute_description = Vertex::get_attribute_description();
+
 	VkPipelineVertexInputStateCreateInfo vertex_input_create_infos{};
 	vertex_input_create_infos.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertex_input_create_infos.vertexBindingDescriptionCount = 0;
-	vertex_input_create_infos.vertexAttributeDescriptionCount = 0;
-	vertex_input_create_infos.pVertexBindingDescriptions = nullptr;
-	vertex_input_create_infos.pVertexAttributeDescriptions = nullptr;
+	vertex_input_create_infos.vertexBindingDescriptionCount = 1;
+	vertex_input_create_infos.vertexAttributeDescriptionCount = attribute_description.size();
+	vertex_input_create_infos.pVertexBindingDescriptions = &binding_description;
+	vertex_input_create_infos.pVertexAttributeDescriptions = attribute_description.data();
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly_create_infos{};
 	input_assembly_create_infos.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

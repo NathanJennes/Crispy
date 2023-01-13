@@ -48,7 +48,7 @@ void CommandBuffers::shutdown()
 	vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
 }
 
-void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index)
+void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer, u32 vertex_count)
 {
 	VkCommandBufferBeginInfo begin_infos{};
 	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -88,7 +88,11 @@ void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 i
 	scissors.extent = SwapchainManager::swapchain_extent();
 	vkCmdSetScissor(command_buffer, 0, 1, &scissors);
 
-	vkCmdDraw(command_buffer, 3, 1, 0, 0);
+	VkBuffer vertex_buffers[] = {vertex_buffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+
+	vkCmdDraw(command_buffer, vertex_count, 1, 0, 0);
 
 	vkCmdEndRenderPass(command_buffer);
 

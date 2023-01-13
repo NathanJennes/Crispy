@@ -23,7 +23,7 @@ public:
 	//----
 	// Command buffer creation
 	//----
-	static void	record_command_buffer(VkCommandBuffer command_buffer, u32 image_index);
+	static void	record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer, u32 vertex_count);
 
 	//----
 	// Getters

@@ -14,10 +14,7 @@ namespace Vulkan {
 bool				Window::_should_close = false;
 bool				Window::_initialized = false;
 bool				Window::_has_resized = false;
-<<<<<<< HEAD
 bool				Window::_visible = true;
-=======
->>>>>>> 5c4a5c9724c59d70c3f61e7ec0e8cbfce64600c7
 std::string			Window::_name;
 u32					Window::_width = 0, Window::_height = 0;
 
