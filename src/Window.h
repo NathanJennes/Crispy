@@ -66,7 +66,10 @@ private:	// Members
 	static bool			_should_close;
 	static bool			_initialized;
 	static bool			_has_resized;
+<<<<<<< HEAD
 	static bool			_visible;
+=======
+>>>>>>> 5c4a5c9724c59d70c3f61e7ec0e8cbfce64600c7
 	static std::string	_name;
 	static u32			_width, _height;
 
