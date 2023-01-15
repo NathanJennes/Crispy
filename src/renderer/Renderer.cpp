@@ -21,8 +21,8 @@ std::vector<VkSemaphore>	Renderer::_render_finished_semaphores;
 std::vector<VkFence>		Renderer::_in_flight_fences;
 const u32					Renderer::_frames_in_flight_count = 2;
 u32							Renderer::_current_frame = 0;
-VkBuffer					Renderer::_vertex_buffer = VK_NULL_HANDLE;
-VkDeviceMemory				Renderer::_vertex_buffer_memory = VK_NULL_HANDLE;
+Buffer*						Renderer::_vertex_buffer = nullptr;
+Buffer*						Renderer::_vertex_staging_buffer = nullptr;
 u32							Renderer::_vertex_buffer_capacity = 3 * 10;
 
 bool Renderer::initialize()
@@ -54,8 +54,8 @@ void Renderer::shutdown()
 
 	CommandBuffers::shutdown();
 
-	vkDestroyBuffer(VulkanInstance::logical_device(), vertex_buffer(), nullptr);
-	vkFreeMemory(VulkanInstance::logical_device(), vertex_buffer_memory(), nullptr);
+	delete _vertex_buffer;
+	delete _vertex_staging_buffer;
 
 	GraphicsPipeline::shutdown();
 	SwapchainManager::shutdown();
@@ -91,9 +91,9 @@ void Renderer::draw_call(const std::vector<Vertex>& verticies)
 	fill_vertex_buffer(verticies, 0);
 
 	if (verticies.size() > vertex_buffer_capacity())
-		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer(), vertex_buffer_capacity());
+		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(), vertex_buffer_capacity());
 	else
-		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer(), verticies.size());
+		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(), verticies.size());
 
 	VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	VkSubmitInfo submit_infos{};
@@ -159,64 +159,17 @@ bool Renderer::create_sync_objects()
 
 bool Renderer::create_vertex_buffer()
 {
-	VkBufferCreateInfo create_infos{};
-	create_infos.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	create_infos.size = sizeof(Vertex) * vertex_buffer_capacity();
-	create_infos.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	create_infos.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(VulkanInstance::logical_device(), &create_infos, nullptr, &_vertex_buffer) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the vertex buffer");
-		return false;
-	}
-
-	VkMemoryRequirements mem_requirements{};
-	vkGetBufferMemoryRequirements(VulkanInstance::logical_device(), vertex_buffer(), &mem_requirements);
-
-	std::optional<u32> memory_type_index = find_memory_type(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT).value();
-	if (!memory_type_index.has_value()) {
-		CORE_ERROR("Couldn't find a memory region with the right type!");
-		return false;
-	}
-
-	VkMemoryAllocateInfo alloc_infos{};
-	alloc_infos.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	alloc_infos.allocationSize = mem_requirements.size;
-	alloc_infos.memoryTypeIndex = memory_type_index.value();
-
-	if (vkAllocateMemory(VulkanInstance::logical_device(), &alloc_infos, nullptr, &_vertex_buffer_memory) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't allocate the vertex buffer!");
-		return false;
-	}
-
-	vkBindBufferMemory(VulkanInstance::logical_device(), vertex_buffer(), vertex_buffer_memory(), 0);
-
+	_vertex_buffer = new Buffer(sizeof(Vertex) * vertex_buffer_capacity(),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	_vertex_staging_buffer = new Buffer(sizeof(Vertex) * vertex_buffer_capacity(),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	return true;
-}
-
-std::optional<u32> Renderer::find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties)
-{
-	VkPhysicalDeviceMemoryProperties mem_properties{};
-	vkGetPhysicalDeviceMemoryProperties(VulkanInstance::physical_device(), &mem_properties);
-
-	for (u32 i = 0; i < mem_properties.memoryTypeCount; i++) {
-		if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
-			return i;
-	}
-	return {};
 }
 
 void Renderer::fill_vertex_buffer(const std::vector<Vertex> &verticies, u32 offset)
 {
-	void *data;
-	vkMapMemory(VulkanInstance::logical_device(), vertex_buffer_memory(), 0, sizeof(Vertex) * vertex_buffer_capacity(), 0, &data);
-
-	if (verticies.size() - offset > vertex_buffer_capacity())
-		memmove(data, &verticies[offset], vertex_buffer_capacity() * sizeof(Vertex));
-	else
-		memmove(data, &verticies[offset], (verticies.size() - offset) * sizeof(Vertex));
-
-	vkUnmapMemory(VulkanInstance::logical_device(), vertex_buffer_memory());
+	vertex_staging_buffer()->set_data(verticies, 0);
+	vertex_staging_buffer()->copy_to(*vertex_buffer(), offset, verticies.size() * sizeof(Vertex), offset);
 }
 
 }

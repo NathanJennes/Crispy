@@ -9,8 +9,10 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include <memory>
 #include "defines.h"
 #include "math/vulkan_maths.h"
+#include "vulkan/Buffer.h"
 
 namespace Vulkan {
 
@@ -60,8 +62,6 @@ private:	// Methods
 
 	static void	fill_vertex_buffer(const std::vector<Vertex>& verticies, u32 offset);
 
-	static std::optional<u32>	find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties);
-
 	//----
 	// Getters
 	//----
@@ -70,9 +70,9 @@ private:	// Methods
 	static std::vector<VkFence>&		in_flight_fences()				{ return _in_flight_fences; }
 	static u32							frames_in_flight_count()		{ return _frames_in_flight_count; }
 	static u32							current_frame()					{ return _current_frame; }
-	static VkBuffer						vertex_buffer()					{ return _vertex_buffer; }
-	static VkDeviceMemory				vertex_buffer_memory()			{ return _vertex_buffer_memory; }
 	static u32							vertex_buffer_capacity()		{ return _vertex_buffer_capacity; }
+	static Buffer*						vertex_buffer()					{ return _vertex_buffer; }
+	static Buffer*						vertex_staging_buffer()			{ return _vertex_staging_buffer; }
 
 private:	// Members
 	static std::vector<VkSemaphore>	_image_available_semaphores;
@@ -83,8 +83,8 @@ private:	// Members
 	static u32						_current_frame;
 
 	static u32						_vertex_buffer_capacity;
-	static VkBuffer					_vertex_buffer;
-	static VkDeviceMemory			_vertex_buffer_memory;
+	static Buffer*					_vertex_buffer;
+	static Buffer*					_vertex_staging_buffer;
 };
 
 }
