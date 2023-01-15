@@ -21,9 +21,13 @@ std::vector<VkSemaphore>	Renderer::_render_finished_semaphores;
 std::vector<VkFence>		Renderer::_in_flight_fences;
 const u32					Renderer::_frames_in_flight_count = 2;
 u32							Renderer::_current_frame = 0;
+u32							Renderer::_vertex_buffer_capacity = 3 * 10;
 Buffer*						Renderer::_vertex_buffer = nullptr;
 Buffer*						Renderer::_vertex_staging_buffer = nullptr;
-u32							Renderer::_vertex_buffer_capacity = 3 * 10;
+u32							Renderer::_index_buffer_capacity = 100;
+Buffer*						Renderer::_index_buffer = nullptr;
+Buffer*						Renderer::_index_staging_buffer = nullptr;
+
 
 bool Renderer::initialize()
 {
@@ -35,7 +39,7 @@ bool Renderer::initialize()
 		return false;
 	if (!SwapchainManager::create_framebuffers())
 		return false;
-	if (!create_vertex_buffer())
+	if (!create_buffers())
 		return false;
 	if (!CommandBuffers::initialize(frames_in_flight_count()))
 		return false;
@@ -56,19 +60,20 @@ void Renderer::shutdown()
 
 	delete _vertex_buffer;
 	delete _vertex_staging_buffer;
+	delete _index_buffer;
+	delete _index_staging_buffer;
 
 	GraphicsPipeline::shutdown();
 	SwapchainManager::shutdown();
 	VulkanInstance::shutdown();
 }
 
-
-void Renderer::draw(const std::vector<Vertex> &verticies)
+void Renderer::draw(const std::vector<Vertex> &verticies, const std::vector<u16> &indices)
 {
-	draw_call(verticies);
+	draw_call(verticies, indices);
 }
 
-void Renderer::draw_call(const std::vector<Vertex>& verticies)
+void Renderer::draw_call(const std::vector<Vertex>& verticies, const std::vector<u16>& indices)
 {
 	vkWaitForFences(VulkanInstance::logical_device(), 1, &in_flight_fences()[current_frame()], VK_TRUE, std::numeric_limits<u64>::max());
 
@@ -89,11 +94,12 @@ void Renderer::draw_call(const std::vector<Vertex>& verticies)
 	vkResetCommandBuffer(CommandBuffers::get(current_frame()), 0);
 
 	fill_vertex_buffer(verticies, 0);
+	fill_index_buffer(indices, 0);
 
-	if (verticies.size() > vertex_buffer_capacity())
-		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(), vertex_buffer_capacity());
+	if (indices.size() >index_buffer_capacity())
+		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(), index_buffer()->buffer(), index_buffer_capacity());
 	else
-		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(), verticies.size());
+		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(),index_buffer()->buffer(), indices.size());
 
 	VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	VkSubmitInfo submit_infos{};
@@ -157,19 +163,30 @@ bool Renderer::create_sync_objects()
 	return true;
 }
 
-bool Renderer::create_vertex_buffer()
+bool Renderer::create_buffers()
 {
 	_vertex_buffer = new Buffer(sizeof(Vertex) * vertex_buffer_capacity(),
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	_vertex_staging_buffer = new Buffer(sizeof(Vertex) * vertex_buffer_capacity(),
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	_index_buffer = new Buffer(sizeof(u16) * index_buffer_capacity(),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	_index_staging_buffer = new Buffer(sizeof(u16) * index_buffer_capacity(),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
 	return true;
 }
 
 void Renderer::fill_vertex_buffer(const std::vector<Vertex> &verticies, u32 offset)
 {
 	vertex_staging_buffer()->set_data(verticies, 0);
-	vertex_staging_buffer()->copy_to(*vertex_buffer(), offset, verticies.size() * sizeof(Vertex), offset);
+	vertex_staging_buffer()->copy_to(*vertex_buffer(), offset, verticies.size() * sizeof(Vertex), 0);
 }
 
+void Renderer::fill_index_buffer(const std::vector<u16> &indices, u32 offset)
+{
+	index_staging_buffer()->set_data(indices, 0);
+	index_staging_buffer()->copy_to(*index_buffer(), offset, indices.size() * sizeof(u16), 0);
+}
 }

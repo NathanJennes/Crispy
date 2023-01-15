@@ -41,8 +41,9 @@ void Application::update()
 											Vertex(0.0f, -0.5f, 1.0f, 1.0f, 1.0f),
 											Vertex(1.0f, -0.5f, 1.0f, 0.0f, 0.0f),
 											Vertex(0.5f,  0.5f, 0.0f, 1.0f, 0.0f)};
+	static std::vector<u16> indices = {0, 1, 2, 0, 4, 1};
 	Window::update();
-	Renderer::draw(verticies);
+	Renderer::draw(verticies, indices);
 }
 
 }

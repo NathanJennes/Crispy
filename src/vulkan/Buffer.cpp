@@ -252,12 +252,12 @@ void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32
 #ifdef DEBUG
 	if (buffer.size() < dst_offset + size_to_copy) {
 		CORE_ERROR("Buffer::copy_to(): destination buffer not large enough!");
-		CORE_ERROR("Buffer::copy_to(): buffer.size() = %lu, dst_offset = %lu, size_to_copy = %lu", buffer.size(), dst_offset, size_to_copy);
+		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %lu", buffer.size(), dst_offset, size_to_copy);
 		return ;
 	}
 	if (size() < src_offset + size_to_copy) {
 		CORE_ERROR("Buffer::copy_to(): source buffer not large enough! This will result in reading past the source buffer!");
-		CORE_ERROR("Buffer::copy_to(): size() = %lu, src_offset = %lu, size_to_copy = %lu", size(), src_offset, size_to_copy);
+		CORE_ERROR("Buffer::copy_to(): size() = %u, src_offset = %u, size_to_copy = %lu", size(), src_offset, size_to_copy);
 		return ;
 	}
 #endif
@@ -270,7 +270,7 @@ void Buffer::copy_to(const Buffer &buffer, u32 dst_offset)
 #ifdef DEBUG
 	if (buffer.size() < dst_offset + size()) {
 		CORE_ERROR("Buffer::copy_to(): destination buffer not large enough!");
-		CORE_ERROR("Buffer::copy_to(): buffer.size() = %lu, dst_offset = %lu, size_to_copy = %lu", buffer.size(), dst_offset, size());
+		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %u", buffer.size(), dst_offset, size());
 		return ;
 	}
 #endif
@@ -289,7 +289,7 @@ void Buffer::set_data(const void *src_data, size_t byte_count, u32 offset)
 
 	if (size() < offset + byte_count) {
 		CORE_ERROR("Buffer::set_data(): The buffer is not large enough to copy this data!");
-		CORE_ERROR("Buffer::set_data(): size(): %lu, offset: %lu, byte_count: %lu", size(), offset, byte_count);
+		CORE_ERROR("Buffer::set_data(): size(): %u, offset: %u, byte_count: %lu", size(), offset, byte_count);
 		return ;
 	}
 #endif

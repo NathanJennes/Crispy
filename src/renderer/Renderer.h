@@ -52,15 +52,16 @@ public:
 	static bool initialize();
 	static void shutdown();
 
-	static void	draw(const std::vector<Vertex>& verticies);
+	static void	draw(const std::vector<Vertex>& verticies, const std::vector<u16>& indices);
 
 private:	// Methods
 	static bool	create_sync_objects();
-	static bool	create_vertex_buffer();
+	static bool	create_buffers();
 
-	static void	draw_call(const std::vector<Vertex>& verticies);
+	static void	draw_call(const std::vector<Vertex>& verticies, const std::vector<u16>& indices);
 
 	static void	fill_vertex_buffer(const std::vector<Vertex>& verticies, u32 offset);
+	static void	fill_index_buffer(const std::vector<u16>& indices, u32 offset);
 
 	//----
 	// Getters
@@ -73,6 +74,9 @@ private:	// Methods
 	static u32							vertex_buffer_capacity()		{ return _vertex_buffer_capacity; }
 	static Buffer*						vertex_buffer()					{ return _vertex_buffer; }
 	static Buffer*						vertex_staging_buffer()			{ return _vertex_staging_buffer; }
+	static u32							index_buffer_capacity()			{ return _index_buffer_capacity; }
+	static Buffer*						index_buffer()					{ return _index_buffer; }
+	static Buffer*						index_staging_buffer()			{ return _index_staging_buffer; }
 
 private:	// Members
 	static std::vector<VkSemaphore>	_image_available_semaphores;
@@ -85,6 +89,10 @@ private:	// Members
 	static u32						_vertex_buffer_capacity;
 	static Buffer*					_vertex_buffer;
 	static Buffer*					_vertex_staging_buffer;
+
+	static u32						_index_buffer_capacity;
+	static Buffer*					_index_buffer;
+	static Buffer*					_index_staging_buffer;
 };
 
 }

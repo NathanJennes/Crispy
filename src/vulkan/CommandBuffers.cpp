@@ -48,7 +48,7 @@ void CommandBuffers::shutdown()
 	vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
 }
 
-void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer, u32 vertex_count)
+void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer, VkBuffer index_buffer, u32 index_count)
 {
 	VkCommandBufferBeginInfo begin_infos{};
 	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -92,7 +92,10 @@ void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 i
 	VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
-	vkCmdDraw(command_buffer, vertex_count, 1, 0, 0);
+	vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+
+	vkCmdDrawIndexed(command_buffer, index_count, 1, 0, 0, 0);
+	//vkCmdDraw(command_buffer, 6, 1, 0, 0);
 
 	vkCmdEndRenderPass(command_buffer);
 
