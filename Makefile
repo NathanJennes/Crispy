@@ -8,11 +8,12 @@ CURRENT_DIR	:=		$(PWD)
 BIN_DIR		:=		bin
 OBJ_DIR		:=		obj
 SRC_DIR		:=		src
+DEP_DIR		:=		dependencies
 
 CXX			:=		g++
 CXX_FLAGS	:=		-Wall -Wextra
 CXX_FLAGS	+=		-DDEBUG -DVK_USE_PLATFORM_XCB_KHR -g3 -MD
-CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include
+CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)
 #CXX_FLAGS	+=		-fsanitize=address
 
 LD_FLAGS	:=		-L$(VULKAN_SDK)/lib -L/usr/lib64

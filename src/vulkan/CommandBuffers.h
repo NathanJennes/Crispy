@@ -24,7 +24,8 @@ public:
 	//----
 	// Command buffer creation
 	//----
-	static void	record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer, VkBuffer index_buffer, u32 index_count);
+	static void	record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer,
+		VkBuffer index_buffer, u32 index_count, VkDescriptorSet descriptor);
 
 	//----
 	// Getters

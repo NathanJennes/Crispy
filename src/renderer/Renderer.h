@@ -11,15 +11,17 @@
 #include <optional>
 #include <memory>
 #include "defines.h"
-#include "math/vulkan_maths.h"
 #include "vulkan/Buffer.h"
+
+#define GLM_FORCE_RADIANS
+#include "glm/glm.hpp"
 
 namespace Vulkan {
 
 struct Vertex
 {
-	vec2 pos;
-	vec3 color;
+	glm::vec2 pos;
+	glm::vec3 color;
 
 	Vertex(float x, float y, float r, float g, float b)
 	:pos(x, y), color(r, g, b) {}
@@ -46,22 +48,32 @@ struct Vertex
 	}
 };
 
+struct UniformBufferObject
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 class Renderer
 {
 public:
 	static bool initialize();
 	static void shutdown();
 
-	static void	draw(const std::vector<Vertex>& verticies, const std::vector<u16>& indices);
+	static void	draw(const std::vector<Vertex>& verticies, const std::vector<u16>& indices, const glm::vec3& pos);
 
 private:	// Methods
 	static bool	create_sync_objects();
 	static bool	create_buffers();
+	static bool	create_descriptor_pool();
+	static bool	create_descriptor_sets();
 
-	static void	draw_call(const std::vector<Vertex>& verticies, const std::vector<u16>& indices);
+	static void	draw_call(const std::vector<Vertex>& verticies, const std::vector<u16>& indices, const glm::vec3& pos);
 
 	static void	fill_vertex_buffer(const std::vector<Vertex>& verticies, u32 offset);
 	static void	fill_index_buffer(const std::vector<u16>& indices, u32 offset);
+	static void	fill_uniform_buffer(const glm::vec3& pos);
 
 	//----
 	// Getters
@@ -77,22 +89,27 @@ private:	// Methods
 	static u32							index_buffer_capacity()			{ return _index_buffer_capacity; }
 	static Buffer*						index_buffer()					{ return _index_buffer; }
 	static Buffer*						index_staging_buffer()			{ return _index_staging_buffer; }
+	static std::vector<Buffer*>			uniform_buffers()				{ return _uniform_buffers; }
 
 private:	// Members
-	static std::vector<VkSemaphore>	_image_available_semaphores;
-	static std::vector<VkSemaphore>	_render_finished_semaphores;
-	static std::vector<VkFence>		_in_flight_fences;
+	static std::vector<VkSemaphore>		_image_available_semaphores;
+	static std::vector<VkSemaphore>		_render_finished_semaphores;
+	static std::vector<VkFence>			_in_flight_fences;
 
-	static const u32				_frames_in_flight_count;
-	static u32						_current_frame;
+	static const u32					_frames_in_flight_count;
+	static u32							_current_frame;
 
-	static u32						_vertex_buffer_capacity;
-	static Buffer*					_vertex_buffer;
-	static Buffer*					_vertex_staging_buffer;
+	static u32							_vertex_buffer_capacity;
+	static Buffer*						_vertex_buffer;
+	static Buffer*						_vertex_staging_buffer;
 
-	static u32						_index_buffer_capacity;
-	static Buffer*					_index_buffer;
-	static Buffer*					_index_staging_buffer;
+	static u32							_index_buffer_capacity;
+	static Buffer*						_index_buffer;
+	static Buffer*						_index_staging_buffer;
+
+	static std::vector<Buffer*>			_uniform_buffers;
+	static VkDescriptorPool				_descriptor_pool;
+	static std::vector<VkDescriptorSet>	_descriptor_sets;
 };
 
 }

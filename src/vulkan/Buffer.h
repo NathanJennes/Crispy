@@ -78,6 +78,7 @@ private:	// Methods
 	const VkCommandPool&			command_pool()		const	{ return _command_pool; }
 	const VkCommandBuffer&			command_buffer()	const	{ return _command_buffer; }
 	const VkFence&					copy_fence()		const	{ return _copy_fence; }
+	void							*mapped_memory()	const	{ return _mapped_memory; }
 
 private:	// Members
 	VkBuffer				_buffer;
@@ -89,6 +90,8 @@ private:	// Members
 	VkCommandPool			_command_pool;
 	VkCommandBuffer			_command_buffer;
 	VkFence					_copy_fence;
+
+	void					*_mapped_memory;
 };
 
 } // Vulkan

@@ -11,20 +11,20 @@
 namespace Vulkan {
 Buffer::Buffer()
 	: _buffer(VK_NULL_HANDLE), _size(0), _usage(0), _memory_properties(0), _memory(VK_NULL_HANDLE),
-	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE)
+	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 }
 
 Buffer::Buffer(const Buffer &other)
 	: _buffer(VK_NULL_HANDLE), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(VK_NULL_HANDLE),
-	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE)
+	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 	initialize();
 }
 
 Buffer::Buffer(Buffer &&other) noexcept
 	: _buffer(other.buffer()), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(other.memory()),
-	_command_pool(other.command_pool()), _command_buffer(other.command_buffer())
+	_command_pool(other.command_pool()), _command_buffer(other.command_buffer()), _copy_fence(other.copy_fence()), _mapped_memory(other.mapped_memory())
 {
 	other._buffer = VK_NULL_HANDLE;
 	other._size = 0;
@@ -33,12 +33,13 @@ Buffer::Buffer(Buffer &&other) noexcept
 	other._memory = VK_NULL_HANDLE;
 	other._command_pool = VK_NULL_HANDLE;
 	other._command_buffer = VK_NULL_HANDLE;
-
-	initialize();
+	other._copy_fence = VK_NULL_HANDLE;
+	other._mapped_memory = nullptr;
 }
 
 Buffer::Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties)
-	: _buffer(VK_NULL_HANDLE), _size(size), _usage(usage), _memory_properties(mem_properties), _memory(VK_NULL_HANDLE)
+	: _buffer(VK_NULL_HANDLE), _size(size), _usage(usage), _memory_properties(mem_properties), _memory(VK_NULL_HANDLE),
+	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 	if (size > 0)
 		initialize();
@@ -56,18 +57,13 @@ Buffer &Buffer::operator=(const Buffer &other)
 	if (&other == this)
 		return *this;
 
-	if (buffer() != VK_NULL_HANDLE)
-		vkDestroyBuffer(VulkanInstance::logical_device(), buffer(), nullptr);
-	if (memory() != VK_NULL_HANDLE)
-		vkFreeMemory(VulkanInstance::logical_device(), memory(), nullptr);
+	shutdown();
 
 	_size = other.size();
 	_usage = other.usage();
 	_memory_properties = other.memory_properties();
 
-	create_buffer();
-	if (buffer() != VK_NULL_HANDLE)
-		allocate_buffer();
+	initialize();
 
 	return *this;
 }
@@ -77,22 +73,28 @@ Buffer &Buffer::operator=(Buffer &&other) noexcept
 	if (&other == this)
 		return *this;
 
-	if (buffer() != VK_NULL_HANDLE)
-		vkDestroyBuffer(VulkanInstance::logical_device(), buffer(), nullptr);
-	if (memory() != VK_NULL_HANDLE)
-		vkFreeMemory(VulkanInstance::logical_device(), memory(), nullptr);
+	shutdown();
 
 	_buffer = other.buffer();
 	_size = other.size();
 	_usage = other.usage();
 	_memory_properties = other.memory_properties();
 	_memory = other.memory();
+	_copy_fence = other.copy_fence();
+	_command_buffer = other.command_buffer();
+	_command_pool = other.command_pool();
+	_mapped_memory = other.mapped_memory();
 
 	other._buffer = VK_NULL_HANDLE;
 	other._size = 0;
 	other._usage = 0;
 	other._memory_properties = 0;
 	other._memory = VK_NULL_HANDLE;
+	other._copy_fence = VK_NULL_HANDLE;
+	other._command_buffer = VK_NULL_HANDLE;
+	other._command_pool = VK_NULL_HANDLE;
+	other._mapped_memory = nullptr;
+
 	return *this;
 }
 
@@ -119,6 +121,9 @@ void Buffer::shutdown()
 		vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), 1, &_command_buffer);
 	if (command_pool() != VK_NULL_HANDLE)
 		vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
+
+	if (mapped_memory() != nullptr)
+		vkUnmapMemory(VulkanInstance::logical_device(), memory());
 	if (memory() != VK_NULL_HANDLE)
 		vkFreeMemory(VulkanInstance::logical_device(), memory(), nullptr);
 	if (buffer() != VK_NULL_HANDLE)
@@ -162,6 +167,9 @@ void Buffer::allocate_buffer()
 	}
 
 	vkBindBufferMemory(VulkanInstance::logical_device(), buffer(), memory(), 0);
+
+	if ((memory_properties() & (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) != 0)
+		vkMapMemory(VulkanInstance::logical_device(), memory(), 0, size(), 0, &_mapped_memory);
 }
 
 std::optional<u32> Buffer::find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties)
@@ -294,9 +302,6 @@ void Buffer::set_data(const void *src_data, size_t byte_count, u32 offset)
 	}
 #endif
 
-	void *buffer_data;
-	vkMapMemory(VulkanInstance::logical_device(), memory(), offset, size(), 0, &buffer_data);
-	memmove(buffer_data, src_data, byte_count);
-	vkUnmapMemory(VulkanInstance::logical_device(), memory());
+	memmove(_mapped_memory, src_data, byte_count);
 }
 } // Vulkan

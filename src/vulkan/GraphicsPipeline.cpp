@@ -11,13 +11,17 @@
 
 namespace Vulkan {
 
-VkPipelineLayout	GraphicsPipeline::_pipeline_layout;
-VkRenderPass		GraphicsPipeline::_render_pass;
-VkPipeline			GraphicsPipeline::_pipeline;
+VkPipelineLayout		GraphicsPipeline::_pipeline_layout;
+VkRenderPass			GraphicsPipeline::_render_pass;
+VkPipeline				GraphicsPipeline::_pipeline;
+VkDescriptorSetLayout	GraphicsPipeline::_descriptor_set_layout;
 
 bool GraphicsPipeline::initialize()
 {
 	if (!initialize_render_pass())
+		return false;
+
+	if (!initialize_descriptor_sets())
 		return false;
 
 	auto vert_code = read_file("obj/shaders/shader.vert.spv");
@@ -100,7 +104,7 @@ bool GraphicsPipeline::initialize()
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f;
 	rasterizer.depthBiasClamp = 0.0f;
@@ -138,8 +142,8 @@ bool GraphicsPipeline::initialize()
 
 	VkPipelineLayoutCreateInfo pipeline_layout_create_infos{};
 	pipeline_layout_create_infos.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipeline_layout_create_infos.setLayoutCount = 0; // Optional
-	pipeline_layout_create_infos.pSetLayouts = nullptr; // Optional
+	pipeline_layout_create_infos.setLayoutCount = 1;
+	pipeline_layout_create_infos.pSetLayouts = &_descriptor_set_layout;
 	pipeline_layout_create_infos.pushConstantRangeCount = 0; // Optional
 	pipeline_layout_create_infos.pPushConstantRanges = nullptr; // Optional
 
@@ -198,9 +202,11 @@ VkShaderModule GraphicsPipeline::create_shader_module(const std::vector<char> &c
 
 void GraphicsPipeline::shutdown()
 {
-	vkDestroyPipeline(VulkanInstance::logical_device(), pipeline(), nullptr);
-	vkDestroyPipelineLayout(VulkanInstance::logical_device(), pipeline_layout(), nullptr);
 	vkDestroyRenderPass(VulkanInstance::logical_device(), render_pass(), nullptr);
+	vkDestroyDescriptorSetLayout(VulkanInstance::logical_device(), descriptor_set_layout(), nullptr);
+	vkDestroyPipelineLayout(VulkanInstance::logical_device(), pipeline_layout(), nullptr);
+	vkDestroyPipeline(VulkanInstance::logical_device(), pipeline(), nullptr);
+
 }
 
 bool GraphicsPipeline::initialize_render_pass()
@@ -246,6 +252,27 @@ bool GraphicsPipeline::initialize_render_pass()
 		return false;
 	}
 
+	return true;
+}
+
+bool GraphicsPipeline::initialize_descriptor_sets()
+{
+	VkDescriptorSetLayoutBinding mvp_layout_binding{};
+	mvp_layout_binding.binding = 0;
+	mvp_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	mvp_layout_binding.descriptorCount = 1;
+	mvp_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	mvp_layout_binding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutCreateInfo create_infos{};
+	create_infos.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	create_infos.bindingCount = 1;
+	create_infos.pBindings = &mvp_layout_binding;
+
+	if (vkCreateDescriptorSetLayout(VulkanInstance::logical_device(), &create_infos, nullptr, &_descriptor_set_layout) != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create the descriptor set!");
+		return false;
+	}
 	return true;
 }
 } // Vulkan

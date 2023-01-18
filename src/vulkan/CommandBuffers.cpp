@@ -44,11 +44,13 @@ bool CommandBuffers::initialize(u32 frames_in_flight_count)
 
 void CommandBuffers::shutdown()
 {
-	vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), command_buffers().size(), command_buffers().data());
+	vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(),
+		command_buffers().size(), command_buffers().data());
 	vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
 }
 
-void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer, VkBuffer index_buffer, u32 index_count)
+void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 image_index, VkBuffer vertex_buffer,
+	VkBuffer index_buffer, u32 index_count, VkDescriptorSet descriptor)
 {
 	VkCommandBufferBeginInfo begin_infos{};
 	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -94,8 +96,11 @@ void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 i
 
 	vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
+	VkDescriptorSet descriptors[] = {descriptor};
+	vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		GraphicsPipeline::pipeline_layout(), 0, 1, descriptors, 0, nullptr);
+
 	vkCmdDrawIndexed(command_buffer, index_count, 1, 0, 0, 0);
-	//vkCmdDraw(command_buffer, 6, 1, 0, 0);
 
 	vkCmdEndRenderPass(command_buffer);
 
