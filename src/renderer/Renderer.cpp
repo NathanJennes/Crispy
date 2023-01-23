@@ -13,8 +13,8 @@
 #include "log.h"
 #include "Window.h"
 
-#define GLM_FORCE_RADIANS
 #include "glm/gtc/matrix_transform.hpp"
+#include "Vertex.h"
 
 namespace Vulkan {
 
@@ -196,7 +196,7 @@ bool Renderer::create_buffers()
 
 	_uniform_buffers.resize(frames_in_flight_count());
 	for (u32 i = 0; i < frames_in_flight_count(); i++) {
-		_uniform_buffers[i] = new Buffer(sizeof(UniformBufferObject),
+		_uniform_buffers[i] = new Buffer(sizeof(CameraUBO),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	}
 
@@ -217,15 +217,14 @@ void Renderer::fill_index_buffer(const std::vector<u16> &indices, u32 offset)
 
 void Renderer::fill_uniform_buffer(const glm::vec3 &pos)
 {
-	UniformBufferObject ubo{};
-	ubo.model = glm::translate(glm::mat4(1.0f), pos);
-	ubo.model = glm::rotate(ubo.model, pos.y, glm::vec3(0.0f, 0.0f, 1.0f));
+	(void)pos;
+	CameraUBO ubo{};
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f),
 		(float) SwapchainManager::swapchain_extent().width / (float) SwapchainManager::swapchain_extent().height, 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
 
-	_uniform_buffers[current_frame()]->set_data(&ubo, sizeof(UniformBufferObject));
+	_uniform_buffers[current_frame()]->set_data(&ubo, sizeof(CameraUBO));
 }
 
 bool Renderer::create_descriptor_pool()
@@ -266,7 +265,7 @@ bool Renderer::create_descriptor_sets()
 		VkDescriptorBufferInfo buffer_info{};
 		buffer_info.buffer = _uniform_buffers[i]->buffer();
 		buffer_info.offset = 0;
-		buffer_info.range = sizeof(UniformBufferObject);
+		buffer_info.range = sizeof(CameraUBO);
 
 		VkWriteDescriptorSet desc_write{};
 		desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

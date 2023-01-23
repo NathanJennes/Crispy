@@ -15,6 +15,11 @@ namespace Vulkan {
 
 class Buffer
 {
+public:		// Factory
+	static Buffer create_vertex_buffer(VkDeviceSize size, bool host_visible);
+	static Buffer create_index_buffer(VkDeviceSize size, bool host_visible);
+	static Buffer create_uniform_buffer(VkDeviceSize size, bool host_visible);
+
 public:
 	Buffer();
 	Buffer(const Buffer& other);
@@ -25,8 +30,10 @@ public:
 	Buffer& operator=(const Buffer& other);
 	Buffer& operator=(Buffer&& other) noexcept;
 
-	void	copy_to(const Buffer& buffer, u32 dst_offset = 0);
-	void	copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset = 0);
+	void	release_ressources();
+
+	void	copy_to(const Buffer& buffer, u32 dst_offset = 0) const;
+	void	copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset = 0) const;
 
 	void	set_data(const void *src_data, size_t byte_count, u32 offset = 0);
 	template<typename T>
@@ -66,10 +73,10 @@ private:	// Methods
 	void	create_command_pool();
 	void	create_command_buffer();
 	void	create_fence();
-	void	record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset);
-	void	submit_command_buffer();
+	void	record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const;
+	void	submit_command_buffer() const;
 
-	std::optional<u32>	find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties);
+	std::optional<u32>	find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties) const;
 
 	//----
 	// Getters

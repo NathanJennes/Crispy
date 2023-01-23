@@ -140,12 +140,17 @@ bool GraphicsPipeline::initialize()
 	color_blending.blendConstants[2] = 0.0f; // Optional
 	color_blending.blendConstants[3] = 0.0f; // Optional
 
+	VkPushConstantRange push_constants{};
+	push_constants.offset = 0;
+	push_constants.size = sizeof(glm::mat4);
+	push_constants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
 	VkPipelineLayoutCreateInfo pipeline_layout_create_infos{};
 	pipeline_layout_create_infos.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipeline_layout_create_infos.setLayoutCount = 1;
 	pipeline_layout_create_infos.pSetLayouts = &_descriptor_set_layout;
-	pipeline_layout_create_infos.pushConstantRangeCount = 0; // Optional
-	pipeline_layout_create_infos.pPushConstantRanges = nullptr; // Optional
+	pipeline_layout_create_infos.pushConstantRangeCount = 1;
+	pipeline_layout_create_infos.pPushConstantRanges = &push_constants;
 
 	if (vkCreatePipelineLayout(VulkanInstance::logical_device(), &pipeline_layout_create_infos, nullptr, &_pipeline_layout) != VK_SUCCESS) {
 		CORE_ERROR("Couldn't create the graphics pipeline's layout!");

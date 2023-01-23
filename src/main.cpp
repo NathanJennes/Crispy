@@ -7,6 +7,9 @@
 #include "utils.h"
 #include "Application.h"
 #include "input.h"
+#include "vulkan/VulkanInstance.h"
+#include "Window.h"
+
 
 int main()
 {

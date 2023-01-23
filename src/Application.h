@@ -7,6 +7,7 @@
 
 #include <string>
 #include "defines.h"
+#include "renderer/BasicRenderer.h"
 
 namespace Vulkan {
 
@@ -21,6 +22,7 @@ public:
 
 private:
 	bool _initialized_properly;
+	BasicRenderer::Mesh mesh;
 };
 
 }

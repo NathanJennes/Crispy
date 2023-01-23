@@ -20,6 +20,7 @@ Buffer::Buffer(const Buffer &other)
 	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 	initialize();
+	other.copy_to(*this);
 }
 
 Buffer::Buffer(Buffer &&other) noexcept
@@ -64,6 +65,7 @@ Buffer &Buffer::operator=(const Buffer &other)
 	_memory_properties = other.memory_properties();
 
 	initialize();
+	other.copy_to(*this);
 
 	return *this;
 }
@@ -106,6 +108,7 @@ void Buffer::initialize()
 			allocate_buffer();
 	}
 
+	// TODO: no need to create command buffers pools and fences for buffers that wont be copied to other buffers
 	create_command_pool();
 	if (command_pool() != VK_NULL_HANDLE)
 		create_command_buffer();
@@ -115,19 +118,32 @@ void Buffer::initialize()
 
 void Buffer::shutdown()
 {
-	if (copy_fence() != VK_NULL_HANDLE)
+	if (copy_fence() != VK_NULL_HANDLE) {
 		vkDestroyFence(VulkanInstance::logical_device(), copy_fence(), nullptr);
-	if (command_buffer() != VK_NULL_HANDLE)
+		_copy_fence = VK_NULL_HANDLE;
+	}
+	if (command_buffer() != VK_NULL_HANDLE) {
 		vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), 1, &_command_buffer);
-	if (command_pool() != VK_NULL_HANDLE)
-		vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
+		_command_buffer = VK_NULL_HANDLE;
+	}
 
-	if (mapped_memory() != nullptr)
+	if (command_pool() != VK_NULL_HANDLE) {
+		vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
+		_command_pool = VK_NULL_HANDLE;
+	}
+
+	if (mapped_memory() != nullptr) {
 		vkUnmapMemory(VulkanInstance::logical_device(), memory());
-	if (memory() != VK_NULL_HANDLE)
+		_mapped_memory = nullptr;
+	}
+	if (memory() != VK_NULL_HANDLE) {
 		vkFreeMemory(VulkanInstance::logical_device(), memory(), nullptr);
-	if (buffer() != VK_NULL_HANDLE)
+		_memory = VK_NULL_HANDLE;
+	}
+	if (buffer() != VK_NULL_HANDLE) {
 		vkDestroyBuffer(VulkanInstance::logical_device(), buffer(), nullptr);
+		_buffer = VK_NULL_HANDLE;
+	}
 }
 
 void Buffer::create_buffer()
@@ -172,7 +188,7 @@ void Buffer::allocate_buffer()
 		vkMapMemory(VulkanInstance::logical_device(), memory(), 0, size(), 0, &_mapped_memory);
 }
 
-std::optional<u32> Buffer::find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties)
+std::optional<u32> Buffer::find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties) const
 {
 	VkPhysicalDeviceMemoryProperties mem_properties{};
 	vkGetPhysicalDeviceMemoryProperties(VulkanInstance::physical_device(), &mem_properties);
@@ -225,7 +241,7 @@ void Buffer::create_fence()
 	}
 }
 
-void Buffer::record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset)
+void Buffer::record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const
 {
 	VkCommandBufferBeginInfo begin_infos{};
 	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -244,7 +260,7 @@ void Buffer::record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size
 	}
 }
 
-void Buffer::submit_command_buffer()
+void Buffer::submit_command_buffer() const
 {
 	VkSubmitInfo submit_infos{};
 	submit_infos.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -255,7 +271,7 @@ void Buffer::submit_command_buffer()
 	vkResetFences(VulkanInstance::logical_device(), 1, &_copy_fence);
 }
 
-void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset)
+void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const
 {
 #ifdef DEBUG
 	if (buffer.size() < dst_offset + size_to_copy) {
@@ -268,12 +284,23 @@ void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32
 		CORE_ERROR("Buffer::copy_to(): size() = %u, src_offset = %u, size_to_copy = %lu", size(), src_offset, size_to_copy);
 		return ;
 	}
+
+	if ((buffer.usage() & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+		CORE_ERROR("Buffer::copy_to(): destination buffer was not set-up to be used as destination in a transfer!");
+		return ;
+	}
+
+	if ((usage() & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0) {
+		CORE_ERROR("Buffer::copy_to(): source buffer was not set-up to be used as source in a transfer!");
+		return ;
+	}
+
 #endif
 	record_command_buffer(buffer.buffer(), dst_offset, size_to_copy, src_offset);
 	submit_command_buffer();
 }
 
-void Buffer::copy_to(const Buffer &buffer, u32 dst_offset)
+void Buffer::copy_to(const Buffer &buffer, u32 dst_offset) const
 {
 #ifdef DEBUG
 	if (buffer.size() < dst_offset + size()) {
@@ -281,6 +308,17 @@ void Buffer::copy_to(const Buffer &buffer, u32 dst_offset)
 		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %u", buffer.size(), dst_offset, size());
 		return ;
 	}
+
+	if ((buffer.usage() & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+		CORE_ERROR("Buffer::copy_to(): destination buffer was not set-up to be used as destination in a transfer!");
+		return ;
+	}
+
+	if ((usage() & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0) {
+		CORE_ERROR("Buffer::copy_to(): source buffer was not set-up to be used as source in a transfer!");
+		return ;
+	}
+
 #endif
 	record_command_buffer(buffer.buffer(), dst_offset, size(), 0);
 	submit_command_buffer();
@@ -303,5 +341,43 @@ void Buffer::set_data(const void *src_data, size_t byte_count, u32 offset)
 #endif
 
 	memmove(_mapped_memory, src_data, byte_count);
+}
+
+Buffer Buffer::create_vertex_buffer(VkDeviceSize size, bool host_visible)
+{
+	VkMemoryPropertyFlags memory_flags{};
+	if (host_visible)
+		memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	else
+		memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	return Buffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, memory_flags);
+}
+
+Buffer Buffer::create_index_buffer(VkDeviceSize size, bool host_visible)
+{
+	VkMemoryPropertyFlags memory_flags{};
+	if (host_visible)
+		memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	else
+		memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	return Buffer(size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, memory_flags);
+}
+
+Buffer Buffer::create_uniform_buffer(VkDeviceSize size, bool host_visible)
+{
+	VkMemoryPropertyFlags memory_flags{};
+	if (host_visible)
+		memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	else
+		memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	return Buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, memory_flags);
+}
+
+void Buffer::release_ressources()
+{
+	shutdown();
 }
 } // Vulkan
