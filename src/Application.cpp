@@ -51,7 +51,7 @@ void Application::update()
 {
 	static double frames = 0.0;
 	static glm::vec3 pos(0.0f, 0.0f, 0.0f);
-	static glm::vec3 rot(0.0f, 0.0f, 0.0f);
+//	static glm::vec3 rot(0.0f, 0.0f, 0.0f);
 
 	Window::update();
 

@@ -2,8 +2,6 @@
 // Created by nathan on 1/9/23.
 //
 
-#include <X11/keysym.h>
-#include <xcb/xcb.h>
 #include "glfw3.h"
 
 #include "input.h"

@@ -326,6 +326,7 @@ void Buffer::copy_to(const Buffer &buffer, u32 dst_offset) const
 
 void Buffer::set_data(const void *src_data, size_t byte_count, u32 offset)
 {
+	(void)offset;
 #ifdef DEBUG
 	u32 mem_requirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	if ((memory_properties() & mem_requirements) != mem_requirements) {

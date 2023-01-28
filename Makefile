@@ -2,8 +2,6 @@ MAKEFLAGS	+=		--no-print-directory -r -R
 
 NAME		:=		vulkan
 
-VULKAN_SDK	:=		$(HOME)/vulkan/1.3.216.0/x86_64
-
 ROOT_DIR	:=		$(PWD)
 BIN_DIR		:=		bin
 OBJ_DIR		:=		obj
@@ -11,10 +9,9 @@ SRC_DIR		:=		src
 DEP_DIR		:=		dependencies
 
 CXX			:=		g++
-CXX_FLAGS	:=		-Wall -Wextra
-CXX_FLAGS	+=		-DDEBUG -DVK_USE_PLATFORM_XCB_KHR -MD
+CXX_FLAGS	:=		-Wall -Wextra -Werror -std=c++17
+CXX_FLAGS	+=		-MD -DGLM_FORCE_RADIANS
 CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)/glfw/include/GLFW -I$(DEP_DIR)
-CXX_FLAGS	+=		-DGLM_FORCE_RADIANS
 
 ifeq ($(shell uname), Linux)
 	LD_FLAGS	:=	-L$(VULKAN_SDK)/lib -L/usr/lib64
@@ -28,7 +25,7 @@ endif
 
 # Debug modes
 ifeq ($(MAKECMDGOALS), debug)
-	CXX_FLAGS +=	-g3 -DDEBUG
+	CXX_FLAGS	+=	-g3 -DDEBUG
 else ifeq ($(MAKECMDGOALS), sanitize)
 	CXXFLAGS	+=	-g3 -DDEBUG -fsanitize=address
 	LD_FLAGS	+=	-fsanitize=address
@@ -45,7 +42,13 @@ SHADER_DIR			:=		shaders
 SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
 COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
 
+ifeq ($(shell uname), Linux)
 SPIRV_COMPILER		:=	$(VULKAN_SDK)/bin/glslc
+else ifeq ($(shell uname), Darwin)
+SPIRV_COMPILER		:=	$(VULKAN_SDK)/bin/glslc
+else
+	$(error "Unsupported OS")
+endif
 
 DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -type d)
 
@@ -67,6 +70,12 @@ fclean: clean
 
 .PHONY: re
 re: fclean all
+
+.PHONY: debug
+debug: all
+
+.PHONY: sanitize
+sanitize: all
 
 .PHONY: before_build
 before_build:

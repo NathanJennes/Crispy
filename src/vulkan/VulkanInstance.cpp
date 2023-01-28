@@ -80,8 +80,17 @@ bool VulkanInstance::init_instance()
 	instance_info.pNext = nullptr;
 	instance_info.pApplicationInfo = &app_info;
 
+#if defined __APPLE__ || defined __MACH__
+	instance_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
 	// Extensions
 	std::vector<const char *> extensions(Window::get_required_instance_extensions());
+
+#if defined __APPLE__ || defined __MACH__
+	extensions.push_back("VK_KHR_portability_enumeration");
+#endif
+
 #ifdef DEBUG
 	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
