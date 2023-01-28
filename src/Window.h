@@ -5,15 +5,11 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <xcb/xcb.h>
-#include <X11/keysym.h>
-#include <X11/XKBlib.h>
-#include <X11/Xlib.h>
-#include <X11/Xlib-xcb.h>
-#include <sys/time.h>
-
 #include <vulkan/vulkan.h>
+#include "glfw3.h"
+#include <sys/time.h>
 #include <string>
+#include <vector>
 
 #include "defines.h"
 
@@ -25,25 +21,27 @@ public:
 	//----
 	// Initialization
 	//----
-	static bool	initialize(const std::string& name, i32 x, i32 y, u32 width, u32 height);
-	static bool	initialize_surface();
-	static void	shutdown();
+	static bool							initialize(const std::string& win_name, i32 x, i32 y, u32 win_width, u32 win_height);
+	static bool							initialize_surface();
+	static void							destroy_surface();
+	static void							shutdown();
+	static std::vector<const char *>	get_required_instance_extensions();
 
 	//----
 	// Updating
 	//----
 	static void	update();
+	static bool	should_close();
 
 	//----
 	// Getters
 	//----
-	static bool					initialized() 	{ return _initialized; }
-	static bool					should_close()	{ return _should_close; }
-	static bool					has_resized()	{ return _has_resized; }
-	static bool					visible()		{ return _visible; }
-	static const VkSurfaceKHR&	surface()		{ return _surface; }
-	static u32					width()			{ return _width; }
-	static u32					height()		{ return _height; }
+	static bool					is_initialized() 	{ return initialized; }
+	static bool					did_resize()		{ return has_resized; }
+	static bool					is_visible()		{ return visible; }
+	static const VkSurfaceKHR&	get_surface()		{ return surface; }
+	static u32					get_width()			{ return width; }
+	static u32					get_height()		{ return height; }
 
 private:	// Methods
 	//----
@@ -52,43 +50,34 @@ private:	// Methods
 	static bool	initialize_window(i32 x, i32 y);
 
 	//----
-	// Getters
+	// Glfw
 	//----
-	static const std::string&	name()					{ return _name; }
-	static Display				*display()				{ return _display; }
-	static xcb_connection_t		*connexion()			{ return _connection; }
-	static xcb_window_t&		window()				{ return _window; }
-	static xcb_screen_t			*screen()				{ return _screen; }
-	static xcb_atom_t&			wm_protocols_mutex()	{ return _wm_protocols_mutex; }
-	static xcb_atom_t&			wm_delete_win_mutex()	{ return _wm_delete_win_mutex; }
+	static void	error_callback(int error, const char *description);
+	static void	key_callback(GLFWwindow *from_window, int key, int scancode, int action, int mods);
+	static void mouse_button_callback(GLFWwindow *from_window, int button, int action, int mods);
+	static void mouse_scroll_callback(GLFWwindow *from_window, double xoffset, double yoffset);
+	static void mouse_position_callback(GLFWwindow *from_window, double xpos, double ypos);
+	static void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
 private:	// Members
-	static bool			_should_close;
-	static bool			_initialized;
-	static bool			_has_resized;
-	static bool			_visible;
+	static bool			initialized;
+	static bool			has_resized;
+	static bool			visible;
 
-	static std::string	_name;
-	static u32			_width, _height;
+	static std::string	name;
+	static u32			width, height;
 
 	//----
-	// X11
+	// Glfw
 	//----
-	static Display			*_display;
-	static xcb_connection_t	*_connection;
-	static xcb_window_t		_window;
-	static xcb_screen_t		*_screen;
-	static xcb_atom_t		_wm_protocols_mutex;
-	static xcb_atom_t		_wm_delete_win_mutex;
+	static	GLFWwindow	*window;
 
 	//----
 	// Vulkan
 	//----
-	static VkSurfaceKHR	_surface;
+	static VkSurfaceKHR	surface;
 };
 
 }
-
-
 
 #endif //WINDOW_H

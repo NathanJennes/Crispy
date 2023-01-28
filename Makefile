@@ -1,10 +1,10 @@
-MAKEFLAGS	+=	--no-print-directory -r -R --warn-undefined-variables
+MAKEFLAGS	+=		--no-print-directory -r -R
 
 NAME		:=		vulkan
 
 VULKAN_SDK	:=		$(HOME)/vulkan/1.3.216.0/x86_64
 
-CURRENT_DIR	:=		$(PWD)
+ROOT_DIR	:=		$(PWD)
 BIN_DIR		:=		bin
 OBJ_DIR		:=		obj
 SRC_DIR		:=		src
@@ -12,17 +12,34 @@ DEP_DIR		:=		dependencies
 
 CXX			:=		g++
 CXX_FLAGS	:=		-Wall -Wextra
-CXX_FLAGS	+=		-DDEBUG -DVK_USE_PLATFORM_XCB_KHR -g3 -MD
-CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)
+CXX_FLAGS	+=		-DDEBUG -DVK_USE_PLATFORM_XCB_KHR -MD
+CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)/glfw/include/GLFW -I$(DEP_DIR)
 CXX_FLAGS	+=		-DGLM_FORCE_RADIANS
-#CXX_FLAGS	+=		-fsanitize=address
 
-LD_FLAGS	:=		-L$(VULKAN_SDK)/lib -L/usr/lib64
-LD_FLAGS	+=		-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon
-#LD_FLAGS	+=		-fsanitize=address
+ifeq ($(shell uname), Linux)
+	LD_FLAGS	:=	-L$(VULKAN_SDK)/lib -L/usr/lib64
+  	LD_FLAGS	+=	-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon
+else ifeq ($(shell uname), Darwin)
+	LD_FLAGS 	:=	-L$(VULKAN_SDK)/lib -L$(DEP_DIR)/glfw/build/src -lglfw3 -framework Cocoa -framework IOKit
+	LD_FLAGS	+=	-lvulkan
+else
+	$(error "Unsupported OS")
+endif
+
+# Debug modes
+ifeq ($(MAKECMDGOALS), debug)
+	CXX_FLAGS +=	-g3 -DDEBUG
+else ifeq ($(MAKECMDGOALS), sanitize)
+	CXXFLAGS	+=	-g3 -DDEBUG -fsanitize=address
+	LD_FLAGS	+=	-fsanitize=address
+else
+	CXXFLAGS	+=	-O3
+endif
 
 SRCS		:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
 OBJS		:=		$(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRCS:.cpp=)))
+
+GLFW_LIB	:=		$(DEP_DIR)/glfw/build/src/libglfw3.a
 
 SHADER_DIR			:=		shaders
 SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
@@ -46,6 +63,7 @@ clean:
 .PHONY: fclean
 fclean: clean
 	@rm -rf $(BIN_DIR)
+	@rm -rf $(DEP_DIR)/glfw/build
 
 .PHONY: re
 re: fclean all
@@ -55,9 +73,9 @@ before_build:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(addprefix $(OBJ_DIR)/, $(DIRECTORIES))
 
-$(BIN_DIR)/$(NAME): $(COMPILED_SHADERS) $(OBJS) Makefile
+$(BIN_DIR)/$(NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(OBJS) Makefile
 	@echo "creating executable $(NAME)..."
-	@$(CXX) $(OBJS) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS)
+	@$(CXX) $(OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS)
 
 $(OBJ_DIR)/%.o: %.cpp Makefile
 	@echo   $<...
@@ -70,5 +88,12 @@ $(OBJ_DIR)/%.vert.spv: %.vert.glsl Makefile
 $(OBJ_DIR)/%.frag.spv: %.frag.glsl Makefile
 	@echo   $<...
 	@$(SPIRV_COMPILER) -fshader-stage=fragment -o $@ $<
+
+$(GLFW_LIB):
+	@cd $(DEP_DIR)/glfw && \
+	cmake -S . -B build \
+	-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF && \
+	cd build && make
+	@cd $(ROOT_DIR)
 
 -include $(OBJS:.o=.d)

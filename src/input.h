@@ -17,8 +17,8 @@ void update_mouse_position(u32 x, u32 y);
 bool is_key_down(Keys key);
 bool is_button_down(Buttons button);
 
-Buttons translate_button(u32 x_button);
-Keys translate_keycode(u32 x_keycode);
+Buttons translate_button(u32 button);
+Keys translate_keycode(u32 keycode);
 
 }
 

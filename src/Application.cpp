@@ -44,7 +44,7 @@ Application::~Application()
 
 bool Application::should_close()
 {
-	return !_initialized_properly || Window::should_close() || is_key_down(Keys::ESCAPE);
+	return !_initialized_properly || Window::should_close();
 }
 
 void Application::update()

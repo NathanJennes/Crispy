@@ -4,6 +4,7 @@
 
 #include <X11/keysym.h>
 #include <xcb/xcb.h>
+#include "glfw3.h"
 
 #include "input.h"
 
@@ -47,269 +48,267 @@ bool is_button_down(Buttons button)
 	return button_status[static_cast<i32>(button)];
 }
 
-Keys translate_keycode(u32 x_keycode)
+Keys translate_keycode(u32 keycode)
 {
-	switch (x_keycode) {
-		case XK_BackSpace:
-			return Keys::BACKSPACE;
-		case XK_Return:
-			return Keys::ENTER;
-		case XK_Tab:
-			return Keys::TAB;
-		case XK_Pause:
-			return Keys::PAUSE;
-		case XK_Caps_Lock:
-			return Keys::CAPITAL;
-		case XK_Escape:
-			return Keys::ESCAPE;
-			// Not supported
-			// case : return Keys::CONVERT;
-			// case : return Keys::NONCONVERT;
-			// case : return Keys::ACCEPT;
-		case XK_Mode_switch:
-			return Keys::MODECHANGE;
-		case XK_space:
+	switch (keycode) {
+		case GLFW_KEY_SPACE:
 			return Keys::SPACE;
-		case XK_Prior:
-			return Keys::PRIOR;
-		case XK_Next:
-			return Keys::NEXT;
-		case XK_End:
-			return Keys::END;
-		case XK_Home:
-			return Keys::HOME;
-		case XK_Left:
-			return Keys::LEFT;
-		case XK_Up:
-			return Keys::UP;
-		case XK_Right:
-			return Keys::RIGHT;
-		case XK_Down:
-			return Keys::DOWN;
-		case XK_Select:
-			return Keys::SELECT;
-		case XK_Print:
-			return Keys::PRINT;
-		case XK_Execute:
-			return Keys::EXECUTE;
-			// case XK_snapshot: return Keys::SNAPSHOT; // not supported
-		case XK_Insert:
-			return Keys::INSERT;
-		case XK_Delete:
-			return Keys::DELETE;
-		case XK_Help:
-			return Keys::HELP;
-		case XK_Meta_L:
-			return Keys::LWIN;  // TODO: not sure this is right
-		case XK_Meta_R:
-			return Keys::RWIN;
-			// case XK_apps: return Keys::APPS; // not supported
-			// case XK_sleep: return Keys::SLEEP; //not supported
-		case XK_KP_0:
-			return Keys::NUMPAD0;
-		case XK_KP_1:
-			return Keys::NUMPAD1;
-		case XK_KP_2:
-			return Keys::NUMPAD2;
-		case XK_KP_3:
-			return Keys::NUMPAD3;
-		case XK_KP_4:
-			return Keys::NUMPAD4;
-		case XK_KP_5:
-			return Keys::NUMPAD5;
-		case XK_KP_6:
-			return Keys::NUMPAD6;
-		case XK_KP_7:
-			return Keys::NUMPAD7;
-		case XK_KP_8:
-			return Keys::NUMPAD8;
-		case XK_KP_9:
-			return Keys::NUMPAD9;
-		case XK_multiply:
-			return Keys::MULTIPLY;
-		case XK_KP_Add:
-			return Keys::ADD;
-		case XK_KP_Separator:
-			return Keys::SEPARATOR;
-		case XK_KP_Subtract:
-			return Keys::SUBTRACT;
-		case XK_KP_Decimal:
-			return Keys::DECIMAL;
-		case XK_KP_Divide:
-			return Keys::DIVIDE;
-		case XK_F1:
-			return Keys::F1;
-		case XK_F2:
-			return Keys::F2;
-		case XK_F3:
-			return Keys::F3;
-		case XK_F4:
-			return Keys::F4;
-		case XK_F5:
-			return Keys::F5;
-		case XK_F6:
-			return Keys::F6;
-		case XK_F7:
-			return Keys::F7;
-		case XK_F8:
-			return Keys::F8;
-		case XK_F9:
-			return Keys::F9;
-		case XK_F10:
-			return Keys::F10;
-		case XK_F11:
-			return Keys::F11;
-		case XK_F12:
-			return Keys::F12;
-		case XK_F13:
-			return Keys::F13;
-		case XK_F14:
-			return Keys::F14;
-		case XK_F15:
-			return Keys::F15;
-		case XK_F16:
-			return Keys::F16;
-		case XK_F17:
-			return Keys::F17;
-		case XK_F18:
-			return Keys::F18;
-		case XK_F19:
-			return Keys::F19;
-		case XK_F20:
-			return Keys::F20;
-		case XK_F21:
-			return Keys::F21;
-		case XK_F22:
-			return Keys::F22;
-		case XK_F23:
-			return Keys::F23;
-		case XK_F24:
-			return Keys::F24;
-		case XK_Num_Lock:
-			return Keys::NUMLOCK;
-		case XK_Scroll_Lock:
-			return Keys::SCROLL;
-		case XK_KP_Equal:
-			return Keys::NUMPAD_EQUAL;
-		case XK_Shift_L:
-			return Keys::LSHIFT;
-		case XK_Shift_R:
-			return Keys::RSHIFT;
-		case XK_Control_L:
-			return Keys::LCONTROL;
-		case XK_Control_R:
-			return Keys::RCONTROL;
-			// case XK_Menu
-			// case XK_Menu
-		case XK_semicolon:
-			return Keys::SEMICOLON;
-		case XK_plus:
-			return Keys::PLUS;
-		case XK_comma:
+		case GLFW_KEY_APOSTROPHE:
+			return Keys::APOSTROPHE;
+		case GLFW_KEY_COMMA:
 			return Keys::COMMA;
-		case XK_minus:
+		case GLFW_KEY_MINUS:
 			return Keys::MINUS;
-		case XK_period:
+		case GLFW_KEY_PERIOD:
 			return Keys::PERIOD;
-		case XK_slash:
+		case GLFW_KEY_SLASH:
 			return Keys::SLASH;
-		case XK_grave:
-			return Keys::GRAVE;
-		case XK_a:
-		case XK_A:
+		case GLFW_KEY_0:
+			return Keys::ZERO;
+		case GLFW_KEY_1:
+			return Keys::ONE;
+		case GLFW_KEY_2:
+			return Keys::TWO;
+		case GLFW_KEY_3:
+			return Keys::THREE;
+		case GLFW_KEY_4:
+			return Keys::FOUR;
+		case GLFW_KEY_5:
+			return Keys::FIVE;
+		case GLFW_KEY_6:
+			return Keys::SIX;
+		case GLFW_KEY_7:
+			return Keys::SEVEN;
+		case GLFW_KEY_8:
+			return Keys::EIGHT;
+		case GLFW_KEY_9:
+			return Keys::NINE;
+		case GLFW_KEY_SEMICOLON:
+			return Keys::SEMICOLON;
+		case GLFW_KEY_EQUAL:
+			return Keys::EQUAL;
+		case GLFW_KEY_A:
 			return Keys::A;
-		case XK_b:
-		case XK_B:
+		case GLFW_KEY_B:
 			return Keys::B;
-		case XK_c:
-		case XK_C:
+		case GLFW_KEY_C:
 			return Keys::C;
-		case XK_d:
-		case XK_D:
+		case GLFW_KEY_D:
 			return Keys::D;
-		case XK_e:
-		case XK_E:
+		case GLFW_KEY_E:
 			return Keys::E;
-		case XK_f:
-		case XK_F:
+		case GLFW_KEY_F:
 			return Keys::F;
-		case XK_g:
-		case XK_G:
+		case GLFW_KEY_G:
 			return Keys::G;
-		case XK_h:
-		case XK_H:
+		case GLFW_KEY_H:
 			return Keys::H;
-		case XK_i:
-		case XK_I:
+		case GLFW_KEY_I:
 			return Keys::I;
-		case XK_j:
-		case XK_J:
+		case GLFW_KEY_J:
 			return Keys::J;
-		case XK_k:
-		case XK_K:
+		case GLFW_KEY_K:
 			return Keys::K;
-		case XK_l:
-		case XK_L:
+		case GLFW_KEY_L:
 			return Keys::L;
-		case XK_m:
-		case XK_M:
+		case GLFW_KEY_M:
 			return Keys::M;
-		case XK_n:
-		case XK_N:
+		case GLFW_KEY_N:
 			return Keys::N;
-		case XK_o:
-		case XK_O:
+		case GLFW_KEY_O:
 			return Keys::O;
-		case XK_p:
-		case XK_P:
+		case GLFW_KEY_P:
 			return Keys::P;
-		case XK_q:
-		case XK_Q:
+		case GLFW_KEY_Q:
 			return Keys::Q;
-		case XK_r:
-		case XK_R:
+		case GLFW_KEY_R:
 			return Keys::R;
-		case XK_s:
-		case XK_S:
+		case GLFW_KEY_S:
 			return Keys::S;
-		case XK_t:
-		case XK_T:
+		case GLFW_KEY_T:
 			return Keys::T;
-		case XK_u:
-		case XK_U:
+		case GLFW_KEY_U:
 			return Keys::U;
-		case XK_v:
-		case XK_V:
+		case GLFW_KEY_V:
 			return Keys::V;
-		case XK_w:
-		case XK_W:
+		case GLFW_KEY_W:
 			return Keys::W;
-		case XK_x:
-		case XK_X:
+		case GLFW_KEY_X:
 			return Keys::X;
-		case XK_y:
-		case XK_Y:
+		case GLFW_KEY_Y:
 			return Keys::Y;
-		case XK_z:
-		case XK_Z:
+		case GLFW_KEY_Z:
 			return Keys::Z;
+		case GLFW_KEY_LEFT_BRACKET:
+			return Keys::LEFT_BRACKET;
+		case GLFW_KEY_BACKSLASH:
+			return Keys::BACKSLASH;
+		case GLFW_KEY_RIGHT_BRACKET:
+			return Keys::RIGHT_BRACKET;
+		case GLFW_KEY_GRAVE_ACCENT:
+			return Keys::GRAVE;
+		case GLFW_KEY_ESCAPE:
+			return Keys::ESCAPE;
+		case GLFW_KEY_ENTER:
+			return Keys::ENTER;
+		case GLFW_KEY_TAB:
+			return Keys::TAB;
+		case GLFW_KEY_BACKSPACE:
+			return Keys::BACKSPACE;
+		case GLFW_KEY_INSERT:
+			return Keys::INSERT;
+		case GLFW_KEY_DELETE:
+			return Keys::DELETE;
+		case GLFW_KEY_RIGHT:
+			return Keys::RIGHT;
+		case GLFW_KEY_LEFT:
+			return Keys::LEFT;
+		case GLFW_KEY_DOWN:
+			return Keys::DOWN;
+		case GLFW_KEY_UP:
+			return Keys::UP;
+		case GLFW_KEY_PAGE_UP:
+			return Keys::PAGE_UP;
+		case GLFW_KEY_PAGE_DOWN:
+			return Keys::PAGE_DOWN;
+		case GLFW_KEY_HOME:
+			return Keys::HOME;
+		case GLFW_KEY_END:
+			return Keys::END;
+		case GLFW_KEY_CAPS_LOCK:
+			return Keys::CAPS_LOCK;
+		case GLFW_KEY_SCROLL_LOCK:
+			return Keys::SCROLL_LOCK;
+		case GLFW_KEY_NUM_LOCK:
+			return Keys::NUM_LOCK;
+		case GLFW_KEY_PRINT_SCREEN:
+			return Keys::PRINT_SCREEN;
+		case GLFW_KEY_PAUSE:
+			return Keys::PAUSE;
+		case GLFW_KEY_F1:
+			return Keys::F1;
+		case GLFW_KEY_F2:
+			return Keys::F2;
+		case GLFW_KEY_F3:
+			return Keys::F3;
+		case GLFW_KEY_F4:
+			return Keys::F4;
+		case GLFW_KEY_F5:
+			return Keys::F5;
+		case GLFW_KEY_F6:
+			return Keys::F6;
+		case GLFW_KEY_F7:
+			return Keys::F7;
+		case GLFW_KEY_F8:
+			return Keys::F8;
+		case GLFW_KEY_F9:
+			return Keys::F9;
+		case GLFW_KEY_F10:
+			return Keys::F10;
+		case GLFW_KEY_F11:
+			return Keys::F11;
+		case GLFW_KEY_F12:
+			return Keys::F12;
+		case GLFW_KEY_F13:
+			return Keys::F13;
+		case GLFW_KEY_F14:
+			return Keys::F14;
+		case GLFW_KEY_F15:
+			return Keys::F15;
+		case GLFW_KEY_F16:
+			return Keys::F16;
+		case GLFW_KEY_F17:
+			return Keys::F17;
+		case GLFW_KEY_F18:
+			return Keys::F18;
+		case GLFW_KEY_F19:
+			return Keys::F19;
+		case GLFW_KEY_F20:
+			return Keys::F20;
+		case GLFW_KEY_F21:
+			return Keys::F21;
+		case GLFW_KEY_F22:
+			return Keys::F22;
+		case GLFW_KEY_F23:
+			return Keys::F23;
+		case GLFW_KEY_F24:
+			return Keys::F24;
+		case GLFW_KEY_KP_0:
+			return Keys::ZERO;
+		case GLFW_KEY_KP_1:
+			return Keys::ONE;
+		case GLFW_KEY_KP_2:
+			return Keys::TWO;
+		case GLFW_KEY_KP_3:
+			return Keys::THREE;
+		case GLFW_KEY_KP_4:
+			return Keys::FOUR;
+		case GLFW_KEY_KP_5:
+			return Keys::FIVE;
+		case GLFW_KEY_KP_6:
+			return Keys::SIX;
+		case GLFW_KEY_KP_7:
+			return Keys::SEVEN;
+		case GLFW_KEY_KP_8:
+			return Keys::EIGHT;
+		case GLFW_KEY_KP_9:
+			return Keys::NINE;
+		case GLFW_KEY_KP_DECIMAL:
+			return Keys::DECIMAL;
+		case GLFW_KEY_KP_DIVIDE:
+			return Keys::DIVIDE;
+		case GLFW_KEY_KP_MULTIPLY:
+			return Keys::MULTIPLY;
+		case GLFW_KEY_KP_SUBTRACT:
+			return Keys::SUBTRACT;
+		case GLFW_KEY_KP_ADD:
+			return Keys::ADD;
+		case GLFW_KEY_KP_ENTER:
+			return Keys::ENTER;
+		case GLFW_KEY_KP_EQUAL:
+			return Keys::EQUAL;
+		case GLFW_KEY_LEFT_SHIFT:
+			return Keys::LSHIFT;
+		case GLFW_KEY_RIGHT_ALT:
+			return Keys::RALT;
+		case GLFW_KEY_LEFT_ALT:
+			return Keys::LALT;
+		case GLFW_KEY_RIGHT_CONTROL:
+			return Keys::RCONTROL;
+		case GLFW_KEY_LEFT_CONTROL:
+			return Keys::LCONTROL;
+		case GLFW_KEY_RIGHT_SUPER:
+			return Keys::RWIN;
+		case GLFW_KEY_LEFT_SUPER:
+			return Keys::LWIN;
 		default:
 			return Keys::INVALID;
 	}
 }
 
-Buttons translate_button(u32 x_button)
+Buttons translate_button(u32 button)
 {
-	switch (x_button) {
-		case XCB_BUTTON_INDEX_1:
+	switch (button) {
+		case GLFW_MOUSE_BUTTON_LEFT:
 			return Buttons::LEFT;
-		case XCB_BUTTON_INDEX_2:
+		case GLFW_MOUSE_BUTTON_MIDDLE:
 			return Buttons::MIDDLE;
-		case XCB_BUTTON_INDEX_3:
+		case GLFW_MOUSE_BUTTON_RIGHT:
 			return Buttons::RIGHT;
+		case GLFW_MOUSE_BUTTON_4:
+            return Buttons::BUTTON_4;
+		case GLFW_MOUSE_BUTTON_5:
+            return Buttons::BUTTON_5;
+		case GLFW_MOUSE_BUTTON_6:
+            return Buttons::BUTTON_6;
+		case GLFW_MOUSE_BUTTON_7:
+            return Buttons::BUTTON_7;
+		case GLFW_MOUSE_BUTTON_8:
+            return Buttons::BUTTON_8;
 		default:
 			return Buttons::INVALID;
 	}
 }
+
 
 }

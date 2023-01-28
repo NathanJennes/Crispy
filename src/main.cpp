@@ -13,7 +13,7 @@
 
 int main()
 {
-	Vulkan::Application app("Vulkan app", 200, 200, 400, 400);
+	Vulkan::Application app("Vulkan app", 50, 50, 200, 200);
 
 	bool limited_framerate = true;
 	f64 target_second_per_frame = 1.0 / 60.0;

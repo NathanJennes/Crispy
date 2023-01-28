@@ -249,8 +249,6 @@ enum class Keys {
     /** @brief The semicolon key. */
     SEMICOLON = 0xBA,
     /** @brief The plus key. */
-    PLUS = 0xBB,
-    /** @brief The comma key. */
     COMMA = 0xBC,
     /** @brief The minus key. */
     MINUS = 0xBD,
@@ -260,7 +258,31 @@ enum class Keys {
     SLASH = 0xBF,
 
     /** @brief The grave key. */
-    GRAVE = 0xC0
+    GRAVE = 0xC0,
+
+	/** @brief The apostrophe key */
+	APOSTROPHE = 0xC1,
+	/** @brief The equals key. */
+	EQUAL = 0xC2,
+	/** @brief The equals key. */
+	LEFT_BRACKET = 0xC3,
+	/** @brief The equals key. */
+	BACKSLASH = 0xC4,
+	/** @brief The equals key. */
+	RIGHT_BRACKET = 0xC5,
+	/** @brief The equals key. */
+	PAGE_UP = 0xC6,
+	/** @brief The equals key. */
+	PAGE_DOWN = 0xC7,
+	/** @brief The equals key. */
+	CAPS_LOCK = 0xC8,
+	/** @brief The equals key. */
+	SCROLL_LOCK = 0xC9,
+	/** @brief The equals key. */
+	NUM_LOCK = 0xCA,
+	/** @brief The equals key. */
+	PRINT_SCREEN = 0xCB
+
 };
 
 enum class Buttons : i32 {
@@ -272,7 +294,19 @@ enum class Buttons : i32 {
 	/** @brief The right mouse button */
 	RIGHT = 0x02,
 	/** @brief The middle mouse button */
-	MIDDLE = 0x03
+	MIDDLE = 0x03,
+
+	/** @brief The left mouse button */
+	BUTTON_4 = 0x04,
+	/** @brief The right mouse button */
+	BUTTON_5 = 0x05,
+	/** @brief The middle mouse button */
+	BUTTON_6 = 0x06,
+	/** @brief The left mouse button */
+	BUTTON_7 = 0x07,
+	/** @brief The right mouse button */
+	BUTTON_8 = 0x08
+
 };
 
 }

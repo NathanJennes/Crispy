@@ -147,7 +147,7 @@ void Renderer::draw_call(const std::vector<Vertex>& verticies, const std::vector
 	present_infos.pResults = nullptr;
 
 	result = vkQueuePresentKHR(VulkanInstance::present_queue(), &present_infos);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || Window::has_resized()) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || Window::did_resize()) {
 		SwapchainManager::recreate();
 	} else if (result != VK_SUCCESS) {
 		CORE_ERROR("Couldn't present swap chain image!");

@@ -56,17 +56,17 @@ SwapchainManager::SwapchainSupportDetails SwapchainManager::get_device_swapchain
 {
 	SwapchainSupportDetails details{};
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, Window::surface(), &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, Window::get_surface(), &details.capabilities);
 
 	u32 format_count;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, Window::surface(), &format_count, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, Window::get_surface(), &format_count, nullptr);
 	details.formats.resize(format_count);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, Window::surface(), &format_count, details.formats.data());
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, Window::get_surface(), &format_count, details.formats.data());
 
 	u32 present_mode_count;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, Window::surface(), &present_mode_count, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, Window::get_surface(), &present_mode_count, nullptr);
 	details.present_modes.resize(present_mode_count);
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, Window::surface(), &present_mode_count, details.present_modes.data());
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, Window::get_surface(), &present_mode_count, details.present_modes.data());
 
 	return details;
 }
@@ -108,7 +108,7 @@ VkExtent2D SwapchainManager::choose_swap_extent(const VkSurfaceCapabilitiesKHR &
 		return capabilities.currentExtent;
 	} else {
 		// On retina displays this calculation is false
-		VkExtent2D actual_extent = {Window::width(), Window::height()};
+		VkExtent2D actual_extent = {Window::get_width(), Window::get_height()};
 
 		actual_extent.width = std::clamp(actual_extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
 		actual_extent.height = std::clamp(actual_extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -190,7 +190,7 @@ bool SwapchainManager::create_swapchain()
 
 	VkSwapchainCreateInfoKHR create_infos{};
 	create_infos.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	create_infos.surface = Window::surface();
+	create_infos.surface = Window::get_surface();
 	create_infos.minImageCount = image_count;
 	create_infos.imageFormat = surface_format.format;
 	create_infos.imageColorSpace = surface_format.colorSpace;

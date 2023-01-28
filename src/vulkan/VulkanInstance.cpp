@@ -67,7 +67,13 @@ bool VulkanInstance::init_instance()
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	app_info.pEngineName = "Vulkan Engine";
 	app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+
+// TODO: check at runtime hardawe api capabilities
+#if defined __APPLE__ || defined __MACH__
 	app_info.apiVersion = VK_API_VERSION_1_3;
+#elif defined __linux__
+	app_info.apiVersion = VK_API_VERSION_1_3;
+#endif
 
 	VkInstanceCreateInfo instance_info{};
 	instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -75,9 +81,7 @@ bool VulkanInstance::init_instance()
 	instance_info.pApplicationInfo = &app_info;
 
 	// Extensions
-	std::vector<const char *> extensions;
-	extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-	extensions.push_back("VK_KHR_xcb_surface");
+	std::vector<const char *> extensions(Window::get_required_instance_extensions());
 #ifdef DEBUG
 	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
@@ -174,7 +178,7 @@ bool VulkanInstance::supports_validation_layer(const std::vector<const char *> &
 void VulkanInstance::shutdown()
 {
 	vkDestroyDevice(logical_device(), nullptr);
-	vkDestroySurfaceKHR(instance(), Window::surface(), nullptr);
+	Window::destroy_surface();
 #ifdef DEBUG
 	destroy_debug_messenger();
 #endif
@@ -350,7 +354,7 @@ QueueFamilyIndices VulkanInstance::get_queues_for_device(VkPhysicalDevice device
 			indices.graphics_index = i;
 
 		VkBool32 present_support = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Window::surface(), &present_support);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Window::get_surface(), &present_support);
 		if (present_support)
 			indices.present_index = i;
 
