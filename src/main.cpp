@@ -2,13 +2,9 @@
 // Created by nathan on 1/9/23.
 //
 
-#include <iostream>
-
 #include "utils.h"
 #include "Application.h"
 #include "input.h"
-#include "vulkan/VulkanInstance.h"
-#include "Window.h"
 
 
 int main()

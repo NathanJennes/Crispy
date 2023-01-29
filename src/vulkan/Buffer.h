@@ -30,7 +30,7 @@ public:
 	Buffer& operator=(const Buffer& other);
 	Buffer& operator=(Buffer&& other) noexcept;
 
-	void	release_ressources();
+	void	release_resources();
 
 	void	copy_to(const Buffer& buffer, u32 dst_offset = 0) const;
 	void	copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset = 0) const;

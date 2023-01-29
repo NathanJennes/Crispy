@@ -97,7 +97,7 @@ VkPresentModeKHR SwapchainManager::choose_present_mode(const std::vector<VkPrese
 			return mode;
 	}
 
-	CORE_DEBUG("Couldn't use the preffered present mode for the swapchain");
+	CORE_DEBUG("Couldn't use the preferred present mode for the swapchain");
 	// The only guaranteed mode to be present
 	return VK_PRESENT_MODE_FIFO_KHR;
 }

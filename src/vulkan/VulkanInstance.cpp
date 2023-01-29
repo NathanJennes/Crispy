@@ -68,7 +68,7 @@ bool VulkanInstance::init_instance()
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	app_info.pEngineName = "Vulkan Engine";
 	app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-// TODO: check at runtime hardawe api capabilities
+// TODO: check at runtime hardware api capabilities
 	IN_MACOS(app_info.apiVersion = VK_API_VERSION_1_3);
 	IN_LINUX(app_info.apiVersion = VK_API_VERSION_1_3);
 
@@ -188,14 +188,14 @@ std::vector<const char *> VulkanInstance::get_required_validation_layers()
 	return required_layers;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messsage_severity,
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
 	VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
 	void *p_user_data)
 {
 	(void) message_type;
 	(void) p_user_data;
 
-	if (messsage_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+	if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		std::cerr << "validation layer: " << p_callback_data->pMessage << std::endl;
 
 	return VK_FALSE;
@@ -212,8 +212,7 @@ void VulkanInstance::destroy_debug_messenger()
 bool VulkanInstance::pick_physical_device()
 {
 	std::vector<VkPhysicalDevice> devices = get_physical_device_list();
-	if (devices.size() == 0)
-	{
+	if (devices.empty()) {
 		CORE_ERROR("No physical device that supports vulkan was found!");
 		return false;
 	}
@@ -326,11 +325,11 @@ u32 VulkanInstance::rate_physical_device(VkPhysicalDevice device)
 	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		score += 100;
 
-	u32 gigas = 0;
+	u32 gigs = 0;
 	for (u32 i = 0; i < memory.memoryHeapCount; i++)
-		gigas += memory.memoryHeaps[i].size;
+		gigs += memory.memoryHeaps[i].size;
 
-	score += gigas / 1000000000;
+	score += gigs / 1000000000;
 	return score;
 }
 

@@ -17,7 +17,7 @@ public:
 	Application(const std::string &name, i32 x, i32 y, i32 width, i32 height);
 	~Application();
 
-	bool should_close();
+	bool should_close() const;
 	void update();
 
 private:

@@ -73,10 +73,10 @@ private:	// Methods
 	static bool								supports_validation_layer(const std::vector<const char*>& required_layers);
 	static std::vector<const char*>			get_required_validation_layers();
 	static VKAPI_ATTR VkBool32 VKAPI_CALL	debug_callback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData);
+		VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+		VkDebugUtilsMessageTypeFlagsEXT message_type,
+		const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
+		void* p_user_data);
 
 	//----
 	// Getters

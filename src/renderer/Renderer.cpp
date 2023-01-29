@@ -3,7 +3,6 @@
 //
 
 #include <limits>
-#include <cstring>
 #include "Renderer.h"
 
 #include "vulkan/VulkanInstance.h"
@@ -82,12 +81,12 @@ void Renderer::shutdown()
 	VulkanInstance::shutdown();
 }
 
-void Renderer::draw(const std::vector<Vertex> &verticies, const std::vector<u16> &indices, const glm::vec3& pos)
+void Renderer::draw(const std::vector<Vertex> &vertices, const std::vector<u16> &indces, const glm::vec3& pos)
 {
-	draw_call(verticies, indices, pos);
+	draw_call(vertices, indces, pos);
 }
 
-void Renderer::draw_call(const std::vector<Vertex>& verticies, const std::vector<u16>& indices, const glm::vec3& pos)
+void Renderer::draw_call(const std::vector<Vertex>& vertices, const std::vector<u16>& indces, const glm::vec3& pos)
 {
 	vkWaitForFences(VulkanInstance::logical_device(), 1, &in_flight_fences()[current_frame()], VK_TRUE, std::numeric_limits<u64>::max());
 
@@ -107,16 +106,16 @@ void Renderer::draw_call(const std::vector<Vertex>& verticies, const std::vector
 
 	vkResetCommandBuffer(CommandBuffers::get(current_frame()), 0);
 
-	fill_vertex_buffer(verticies, 0);
-	fill_index_buffer(indices, 0);
+	fill_vertex_buffer(vertices, 0);
+	fill_index_buffer(indces, 0);
 	fill_uniform_buffer(pos);
 
-	if (indices.size() >index_buffer_capacity()) {
+	if (indces.size() >index_buffer_capacity()) {
 		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(),
 			index_buffer()->buffer(), index_buffer_capacity(), _descriptor_sets[current_frame()]);
 	} else {
 		CommandBuffers::record_command_buffer(CommandBuffers::get(current_frame()), image_index, vertex_buffer()->buffer(),
-			index_buffer()->buffer(), indices.size(), _descriptor_sets[current_frame()]);
+			index_buffer()->buffer(), indces.size(), _descriptor_sets[current_frame()]);
 	}
 
 
@@ -203,10 +202,10 @@ bool Renderer::create_buffers()
 	return true;
 }
 
-void Renderer::fill_vertex_buffer(const std::vector<Vertex> &verticies, u32 offset)
+void Renderer::fill_vertex_buffer(const std::vector<Vertex> &vertices, u32 offset)
 {
-	vertex_staging_buffer()->set_data(verticies, 0);
-	vertex_staging_buffer()->copy_to(*vertex_buffer(), offset, verticies.size() * sizeof(Vertex), 0);
+	vertex_staging_buffer()->set_data(vertices, 0);
+	vertex_staging_buffer()->copy_to(*vertex_buffer(), offset, vertices.size() * sizeof(Vertex), 0);
 }
 
 void Renderer::fill_index_buffer(const std::vector<u16> &indices, u32 offset)
@@ -240,7 +239,7 @@ bool Renderer::create_descriptor_pool()
 	create_infos.maxSets = static_cast<uint32_t>(frames_in_flight_count());
 
 	if (vkCreateDescriptorPool(VulkanInstance::logical_device(), &create_infos, nullptr, &_descriptor_pool) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create a descrpitor pool");
+		CORE_ERROR("Couldn't create a descripitor pool");
 		return false;
 	}
 	return true;

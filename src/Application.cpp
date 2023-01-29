@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "Window.h"
-#include "renderer/Renderer.h"
 #include "input.h"
 #include "vulkan/VulkanInstance.h"
 #include "renderer/BasicRenderer.h"
@@ -19,7 +18,7 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 	if (!BasicRenderer::initialize())
 		return;
 
-	std::vector<Vertex> verticies = {Vertex({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}),
+	std::vector<Vertex> vertices = {Vertex({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}),
 											Vertex({5.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}),
 											Vertex({5.0f, -5.0f, 0.0f}, {0.5f, 1.0f, 1.0f}),
 											Vertex({0.0f, -5.0f, 0.0f}, {1.0f, 0.0f, 1.0f}),
@@ -29,7 +28,7 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 											Vertex({0.0f, -5.0f, 5.0f}, {0.0f, 0.0f, 1.0f})};
 
 	std::vector<u32> indices = {0, 1, 2, 0, 2, 3, 4, 5, 1, 4, 1, 0, 1, 5, 6, 1, 6, 2, 4, 0, 3, 4, 3, 7, 3, 2, 6, 3, 6, 7, 5, 4, 7, 5, 7, 6};
-	mesh = BasicRenderer::Mesh(verticies, indices);
+	mesh = BasicRenderer::Mesh(vertices, indices);
 
 	_initialized_properly = true;
 }
@@ -37,12 +36,12 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 Application::~Application()
 {
 	vkDeviceWaitIdle(VulkanInstance::logical_device());
-	mesh.release_ressources();
+	mesh.release_resources();
 	BasicRenderer::shutdown();
 	Window::shutdown();
 }
 
-bool Application::should_close()
+bool Application::should_close() const
 {
 	return !_initialized_properly || Window::should_close();
 }
