@@ -12,6 +12,7 @@
 #include "defines.h"
 #include "Window.h"
 #include "SwapchainManager.h"
+#include "core/crispy_core.h"
 
 namespace Vulkan {
 
@@ -67,41 +68,26 @@ bool VulkanInstance::init_instance()
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	app_info.pEngineName = "Vulkan Engine";
 	app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-
 // TODO: check at runtime hardawe api capabilities
-#if defined __APPLE__ || defined __MACH__
-	app_info.apiVersion = VK_API_VERSION_1_3;
-#elif defined __linux__
-	app_info.apiVersion = VK_API_VERSION_1_3;
-#endif
+	IN_MACOS(app_info.apiVersion = VK_API_VERSION_1_3);
+	IN_LINUX(app_info.apiVersion = VK_API_VERSION_1_3);
 
 	VkInstanceCreateInfo instance_info{};
 	instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instance_info.pNext = nullptr;
 	instance_info.pApplicationInfo = &app_info;
-
-#if defined __APPLE__ || defined __MACH__
-	instance_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
+	IN_MACOS(instance_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR);
 
 	// Extensions
 	std::vector<const char *> extensions(Window::get_required_instance_extensions());
-
-#if defined __APPLE__ || defined __MACH__
-	extensions.push_back("VK_KHR_portability_enumeration");
-#endif
-
-#ifdef DEBUG
-	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-#endif
+	IN_MACOS(extensions.push_back("VK_KHR_portability_enumeration"));
+	IN_DEBUG(extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
 	instance_info.enabledExtensionCount = extensions.size();
 	instance_info.ppEnabledExtensionNames = extensions.data();
 
 	// Layers
 	std::vector<const char *> layers;
-#ifdef DEBUG
-	layers = get_required_validation_layers();
-#endif
+	IN_DEBUG(layers = get_required_validation_layers());
 	instance_info.enabledLayerCount = layers.size();
 	instance_info.ppEnabledLayerNames = layers.data();
 

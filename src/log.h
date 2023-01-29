@@ -23,36 +23,36 @@ void log_fatal(const char *message, ...);
 
 
 #if LOG_TRACE_ENABLED == 1
-# define CORE_TRACE(message, ...) Vulkan::log_trace(message, ##__VA_ARGS__);
+# define CORE_TRACE(message, ...) Vulkan::log_trace(message, ##__VA_ARGS__)
 #else
 # define CORE_TRACE(message, ...)
 #endif
 
 #if LOG_DEBUG_ENABLED == 1
-# define CORE_DEBUG(message, ...) Vulkan::log_debug(message, ##__VA_ARGS__);
+# define CORE_DEBUG(message, ...) Vulkan::log_debug(message, ##__VA_ARGS__)
 #else
 # define CORE_DEBUG(message, ...)
 #endif
 
 #if LOG_INFO_ENABLED == 1
-# define CORE_INFO(message, ...) Vulkan::log_info(message, ##__VA_ARGS__);
+# define CORE_INFO(message, ...) Vulkan::log_info(message, ##__VA_ARGS__)
 #else
 # define CORE_INFO(message, ...)
 #endif
 
 #if LOG_WARN_ENABLED == 1
-# define CORE_WARN(message, ...) Vulkan::log_warn(message, ##__VA_ARGS__);
+# define CORE_WARN(message, ...) Vulkan::log_warn(message, ##__VA_ARGS__)
 #else
 # define CORE_WARN(message, ...)
 #endif
 
 #ifdef DEBUG
-# define CORE_ERROR(message, ...) Vulkan::log_error("%s:%d", __FILE__, __LINE__); Vulkan::log_error(message, ##__VA_ARGS__);
+# define CORE_ERROR(message, ...) Vulkan::log_error("%s:%d", __FILE__, __LINE__); Vulkan::log_error(message, ##__VA_ARGS__)
 #else
 # define CORE_ERROR(message, ...) Vulkan::log_error(message, ##__VA_ARGS__);
 #endif
 
-# define CORE_FATAL(message, ...) Vulkan::log_fatal(message, ##__VA_ARGS__);
+# define CORE_FATAL(message, ...) Vulkan::log_fatal(message, ##__VA_ARGS__)
 
-#define TODO_PROPAGATE_ERRORS CORE_DEBUG("TODO: this function should propagate errors!");
+#define TODO_PROPAGATE_ERRORS CORE_DEBUG("TODO: this function should propagate errors!")
 
