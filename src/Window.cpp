@@ -15,6 +15,10 @@ bool				Window::has_resized = false;
 bool				Window::visible = true;
 std::string			Window::name;
 u32					Window::width = 0, Window::height = 0;
+float				Window::aspec_ratio = 0.0f;
+bool				Window::mouse_locked = true;
+glm::vec2			Window::last_mouse_pos;
+glm::vec2			Window::mouse_pos;
 
 VkSurfaceKHR		Window::surface = VK_NULL_HANDLE;
 GLFWwindow			*Window::window = nullptr;
@@ -24,6 +28,7 @@ bool Window::initialize(const std::string &win_name, i32 x, i32 y, u32 win_width
 	name = win_name;
 	width = win_width;
 	height = win_height;
+	aspec_ratio = (float)width / (float)height;
 
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit()) {
@@ -37,6 +42,9 @@ bool Window::initialize(const std::string &win_name, i32 x, i32 y, u32 win_width
 	glfwSetCursorPosCallback(window, mouse_position_callback);
 	glfwSetScrollCallback(window, mouse_scroll_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	return true;
 }
 
@@ -69,8 +77,21 @@ bool Window::initialize_window(i32 x, i32 y)
 
 void Window::update()
 {
+	last_mouse_pos = mouse_pos;
 	has_resized = false;
 	glfwPollEvents();
+
+	static bool was_key_down = false;
+	if (is_key_down(Keys::TAB) && !was_key_down) {
+		if (!mouse_locked)
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		else
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		mouse_locked = !mouse_locked;
+		was_key_down = true;
+	} else if (!is_key_down(Keys::TAB)) {
+		was_key_down = false;
+	}
 }
 
 bool Window::initialize_surface()
@@ -126,9 +147,9 @@ void Window::mouse_scroll_callback(GLFWwindow *from_window, double xoffset, doub
 void Window::mouse_position_callback(GLFWwindow *from_window, double xpos, double ypos)
 {
     (void) window;
-    (void) xpos;
-    (void) ypos;
 	(void) from_window;
+	mouse_pos.x = (float)xpos;
+	mouse_pos.y = (float)ypos;
 }
 
 void Window::framebuffer_size_callback(GLFWwindow *from_window, int new_width, int new_height)
@@ -139,6 +160,7 @@ void Window::framebuffer_size_callback(GLFWwindow *from_window, int new_width, i
 	width = new_width;
 	height = new_height;
 	has_resized = true;
+	aspec_ratio = (float)width / (float)height;
 }
 
 std::vector<const char *> Window::get_required_instance_extensions()

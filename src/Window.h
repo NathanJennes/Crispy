@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <string>
 #include <vector>
+#include "glm/vec2.hpp"
 
 #include "defines.h"
 
@@ -36,12 +37,16 @@ public:
 	//----
 	// Getters
 	//----
-	static bool					is_initialized() 	{ return initialized; }
-	static bool					did_resize()		{ return has_resized; }
-	static bool					is_visible()		{ return visible; }
-	static const VkSurfaceKHR&	get_surface()		{ return surface; }
-	static u32					get_width()			{ return width; }
-	static u32					get_height()		{ return height; }
+	static bool					is_initialized() 		{ return initialized; }
+	static bool					did_resize()			{ return has_resized; }
+	static bool					is_visible()			{ return visible; }
+	static const VkSurfaceKHR&	get_surface()			{ return surface; }
+	static u32					get_width()				{ return width; }
+	static u32					get_height()			{ return height; }
+	static float				get_aspect_ratio()		{ return aspec_ratio; }
+	static float				is_mouse_locked()		{ return mouse_locked; }
+	static const glm::vec2&		get_last_mouse_pos()	{ return last_mouse_pos; }
+	static const glm::vec2&		get_mouse_pos()			{ return mouse_pos; }
 
 private:	// Methods
 	//----
@@ -66,6 +71,12 @@ private:	// Members
 
 	static std::string	name;
 	static u32			width, height;
+	static float		aspec_ratio;
+
+	static bool			mouse_locked;
+
+	static glm::vec2	last_mouse_pos;
+	static glm::vec2	mouse_pos;
 
 	//----
 	// Glfw
