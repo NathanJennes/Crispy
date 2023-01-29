@@ -54,8 +54,7 @@ bool VulkanInstance::init_instance()
 {
 #ifdef DEBUG
 	// Check early if validation layers are supported
-	if (!supports_validation_layer(get_required_validation_layers()))
-	{
+	if (!supports_validation_layer(get_required_validation_layers())) {
 		CORE_ERROR("Started in debug mode but validation layers are unavailable!");
 		return false;
 	}
@@ -106,8 +105,7 @@ bool VulkanInstance::init_instance()
 	instance_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debug_create_info;
 #endif
 
-	if (vkCreateInstance(&instance_info, nullptr, &_instance) != VK_SUCCESS)
-	{
+	if (vkCreateInstance(&instance_info, nullptr, &_instance) != VK_SUCCESS) {
 		CORE_ERROR("Couldn't create the vulkan instance!");
 		return false;
 	}
@@ -130,11 +128,9 @@ bool VulkanInstance::init_debug_messenger()
 
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance(),
 		"vkCreateDebugUtilsMessengerEXT");
-	if (func != nullptr)
-	{
+	if (func != nullptr) {
 		return func(instance(), &create_info, nullptr, &_debug_messenger) == VK_SUCCESS;
-	} else
-	{
+	} else {
 		CORE_ERROR("Couldn't load function: vkCreateDebugUtilsMessengerEXT");
 		return false;
 	}
@@ -148,23 +144,18 @@ bool VulkanInstance::supports_validation_layer(const std::vector<const char *> &
 	std::vector<VkLayerProperties> available_layers(layer_count);
 	vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-	for (const char *layer_name: required_layers)
-	{
+	for (const char *layer_name: required_layers) {
 		bool layerFound = false;
 
-		for (const auto &layer_properties: available_layers)
-		{
-			if (strcmp(layer_name, layer_properties.layerName) == 0)
-			{
+		for (const auto &layer_properties: available_layers) {
+			if (strcmp(layer_name, layer_properties.layerName) == 0) {
 				layerFound = true;
 				break;
 			}
 		}
 
 		if (!layerFound)
-		{
 			return false;
-		}
 	}
 
 	return true;
@@ -174,9 +165,7 @@ void VulkanInstance::shutdown()
 {
 	vkDestroyDevice(logical_device(), nullptr);
 	Window::destroy_surface();
-#ifdef DEBUG
-	destroy_debug_messenger();
-#endif
+	IN_DEBUG(destroy_debug_messenger());
 	vkDestroyInstance(instance(), nullptr);
 }
 
@@ -390,11 +379,9 @@ bool VulkanInstance::init_logical_device()
 	device_infos.ppEnabledExtensionNames = device_extensions.data();
 	device_infos.enabledLayerCount = 0;
 
-#ifdef DEBUG
-	std::vector<const char*> required_layers = get_required_validation_layers();
-	device_infos.ppEnabledLayerNames = required_layers.data();
-	device_infos.enabledLayerCount = required_layers.size();
-#endif
+	IN_DEBUG(std::vector<const char*> required_layers = get_required_validation_layers());
+	IN_DEBUG(device_infos.ppEnabledLayerNames = required_layers.data());
+	IN_DEBUG(device_infos.enabledLayerCount = required_layers.size());
 
 	if (vkCreateDevice(physical_device(), &device_infos, nullptr, &_logical_device) != VK_SUCCESS) {
 		CORE_ERROR("Couldn't create a logical device!");
