@@ -42,13 +42,7 @@ SHADER_DIR			:=		shaders
 SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
 COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
 
-ifeq ($(shell uname), Linux)
-SPIRV_COMPILER		:=	$(VULKAN_SDK)/bin/glslc
-else ifeq ($(shell uname), Darwin)
-SPIRV_COMPILER		:=	$(VULKAN_SDK)/bin/glslc
-else
-	$(error "Unsupported OS")
-endif
+SPIRV_COMPILER		:=		$(VULKAN_SDK)/bin/glslc
 
 DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -type d)
 
