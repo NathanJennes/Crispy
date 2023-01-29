@@ -218,10 +218,10 @@ void Renderer::fill_uniform_buffer(const glm::vec3 &pos)
 {
 	(void)pos;
 	CameraUBO ubo{};
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f),
+	ubo.view_proj = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f))
+					* glm::perspective(glm::radians(45.0f),
 		(float) SwapchainManager::swapchain_extent().width / (float) SwapchainManager::swapchain_extent().height, 0.1f, 10.0f);
-	ubo.proj[1][1] *= -1;
+	ubo.view_proj[1][1] *= -1;
 
 	_uniform_buffers[current_frame()]->set_data(&ubo, sizeof(CameraUBO));
 }

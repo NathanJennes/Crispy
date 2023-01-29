@@ -10,6 +10,7 @@
 #include "vulkan/SwapchainManager.h"
 #include "Window.h"
 #include "glm/gtc/matrix_transform.hpp"
+#include "Camera.h"
 
 namespace Vulkan {
 
@@ -475,10 +476,7 @@ bool BasicRenderer::present_frame()
 void BasicRenderer::setup_camera_ubo()
 {
 	CameraUBO ubo{};
-	ubo.view = glm::lookAt(glm::vec3(0.0f, 3.0f, -5.0f), glm::vec3(2.5f, -2.5f, 2.5f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f),
-		(float) SwapchainManager::swapchain_extent().width / (float) SwapchainManager::swapchain_extent().height, 0.1f, 10.0f);
-	ubo.proj[1][1] *= -1;
+	ubo.view_proj = Camera::get_camera_matrix();
 	camera_uniform_buffer.set_data(&ubo, sizeof(CameraUBO));
 	vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		GraphicsPipeline::pipeline_layout(), 0, 1, &camera_descriptor_set, 0, nullptr);

@@ -7,6 +7,7 @@
 #include "input.h"
 #include "vulkan/VulkanInstance.h"
 #include "renderer/BasicRenderer.h"
+#include "renderer/Camera.h"
 
 namespace Vulkan {
 
@@ -17,6 +18,7 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 		return;
 	if (!BasicRenderer::initialize())
 		return;
+	Camera::initialize({0.0f, 3.0f, -5.0f});
 
 	std::vector<Vertex> vertices = {Vertex({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}),
 											Vertex({5.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}),
@@ -49,26 +51,15 @@ bool Application::should_close() const
 void Application::update()
 {
 	static double frames = 0.0;
-	static glm::vec3 pos(0.0f, 0.0f, 0.0f);
-//	static glm::vec3 rot(0.0f, 0.0f, 0.0f);
 
 	Window::update();
-
-	if (is_key_down(Keys::A))
-		pos.x += 0.1f;
-	if (is_key_down(Keys::D))
-		pos.x -= 0.1f;
-	if (is_key_down(Keys::W))
-		pos.z -= 0.1f;
-	if (is_key_down(Keys::S))
-		pos.z += 0.1f;
-	if (is_key_down(Keys::SPACE))
-		pos.y -= 0.1f;
-	if (is_key_down(Keys::LSHIFT))
-		pos.y += 0.1f;
+	Camera::update();
 
 	BasicRenderer::begin_frame();
-	BasicRenderer::draw(mesh, pos, glm::vec3(0.0f, frames, 0.0f));
+	BasicRenderer::draw(mesh, {0.0f, 0.0f, 0.0f}, glm::vec3(0.0f, frames, 0.0f));
+	BasicRenderer::draw(mesh, {0.0f, 10.0f, 0.0f}, glm::vec3(0.0f, -frames, 0.0f));
+	BasicRenderer::draw(mesh, {0.0f, 0.0f, 10.0f}, glm::vec3(0.0f, frames, 0.0f));
+	BasicRenderer::draw(mesh, {10.0f, 0.0f, 10.0f}, glm::vec3(0.0f, -frames, 0.0f));
 	BasicRenderer::end_frame();
 	frames += 0.005;
 }

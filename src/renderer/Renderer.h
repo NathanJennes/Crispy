@@ -19,8 +19,7 @@ namespace Vulkan {
 
 struct CameraUBO
 {
-	glm::mat4 view;
-	glm::mat4 proj;
+	glm::mat4 view_proj;
 };
 
 class Renderer
