@@ -22,21 +22,21 @@ BasicRenderer::Mesh::Mesh()
 {
 }
 
-BasicRenderer::Mesh::Mesh(const std::vector<Vertex> &verticies, const std::vector<u32> &indicies)
-	: vertex_count(verticies.size()), index_count(indicies.size())
+BasicRenderer::Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<u32> &indices)
+	: vertex_count(vertices.size()), index_count(indices.size())
 {
 	// Vertex buffer
 	Buffer vertex_staging_buffer = Buffer::create_vertex_buffer(vertex_count * sizeof(Vertex), true);
 	vertex_buffer = Buffer::create_vertex_buffer(vertex_count * sizeof(Vertex), false);
 
-	vertex_staging_buffer.set_data(verticies, 0);
+	vertex_staging_buffer.set_data(vertices, 0);
 	vertex_staging_buffer.copy_to(vertex_buffer);
 
 	// Index buffer
 	Buffer index_staging_buffer = Buffer::create_index_buffer(index_count * sizeof(u32), true);
 	index_buffer = Buffer::create_index_buffer(index_count * sizeof(u32), false);
 
-	index_staging_buffer.set_data(indicies, 0);
+	index_staging_buffer.set_data(indices, 0);
 	index_staging_buffer.copy_to(index_buffer);
 
 
@@ -114,7 +114,7 @@ bool Vulkan::BasicRenderer::initialize()
 
 	if (!create_camera_descriptor_set())
 		return false;
-	CORE_TRACE("BasicRenderer's descrpitor set created");
+	CORE_TRACE("BasicRenderer's descripitor set created");
 
 	if (!create_command_pool())
 		return false;
@@ -133,7 +133,7 @@ void Vulkan::BasicRenderer::shutdown()
 	destroy_command_pool();
 	destroy_descriptor_pool();
 	destroy_sync_objects();
-	camera_uniform_buffer.release_ressources();
+	camera_uniform_buffer.release_resources();
 
 	GraphicsPipeline::shutdown();
 	SwapchainManager::shutdown();

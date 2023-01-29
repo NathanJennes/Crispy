@@ -54,5 +54,5 @@ void log_fatal(const char *message, ...);
 
 # define CORE_FATAL(message, ...) Vulkan::log_fatal(message, ##__VA_ARGS__)
 
-#define TODO_PROPAGATE_ERRORS CORE_DEBUG("TODO: this function should propagate errors!")
+#define TODO_PROPAGATE_ERRORS CORE_DEBUG("TODO: this function should propagate errors!");
 

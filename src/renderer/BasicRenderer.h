@@ -22,14 +22,14 @@ public:	// Types
 	public:		// Methods
 		Mesh();
 		~Mesh() = default;
-		Mesh(const std::vector<Vertex>& verticies, const std::vector<u32>& indicies);
+		Mesh(const std::vector<Vertex>& vertices, const std::vector<u32>& indices);
 		Mesh(const Mesh& other) = default;
 		Mesh(Mesh&& other) noexcept;
 
 		Mesh& operator=(const Mesh& other);
 		Mesh& operator=(Mesh&& other) noexcept;
 
-		void	release_ressources()	{ vertex_buffer.release_ressources(); index_buffer.release_ressources(); };
+		void	release_resources()	{ vertex_buffer.release_resources(); index_buffer.release_resources(); };
 
 		const Buffer&			get_vertex_buffer()		const	{ return vertex_buffer; }
 		const Buffer&			get_index_buffer()		const	{ return index_buffer; }

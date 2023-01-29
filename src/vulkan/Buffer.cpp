@@ -377,7 +377,7 @@ Buffer Buffer::create_uniform_buffer(VkDeviceSize size, bool host_visible)
 	return Buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, memory_flags);
 }
 
-void Buffer::release_ressources()
+void Buffer::release_resources()
 {
 	shutdown();
 }

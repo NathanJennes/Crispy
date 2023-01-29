@@ -29,7 +29,7 @@ public:
 	static bool initialize();
 	static void shutdown();
 
-	static void	draw(const std::vector<Vertex>& verticies, const std::vector<u16>& indices, const glm::vec3& pos);
+	static void	draw(const std::vector<Vertex>& vertices, const std::vector<u16>& indices, const glm::vec3& pos);
 
 private:	// Methods
 	static bool	create_sync_objects();
@@ -37,9 +37,9 @@ private:	// Methods
 	static bool	create_descriptor_pool();
 	static bool	create_descriptor_sets();
 
-	static void	draw_call(const std::vector<Vertex>& verticies, const std::vector<u16>& indices, const glm::vec3& pos);
+	static void	draw_call(const std::vector<Vertex>& vertices, const std::vector<u16>& indices, const glm::vec3& pos);
 
-	static void	fill_vertex_buffer(const std::vector<Vertex>& verticies, u32 offset);
+	static void	fill_vertex_buffer(const std::vector<Vertex>& vertices, u32 offset);
 	static void	fill_index_buffer(const std::vector<u16>& indices, u32 offset);
 	static void	fill_uniform_buffer(const glm::vec3& pos);
 
