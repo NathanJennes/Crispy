@@ -14,9 +14,11 @@ CXX_FLAGS	+=		-MD -DGLM_FORCE_RADIANS
 CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)/glfw/include/GLFW -I$(DEP_DIR)
 
 ifeq ($(shell uname), Linux)
+	CXX_FLAGS	+=	-DPLATFORM_LINUX
 	LD_FLAGS	:=	-L$(VULKAN_SDK)/lib -L/usr/lib64
   	LD_FLAGS	+=	-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon
 else ifeq ($(shell uname), Darwin)
+	CXX_FLAGS	+=	-DPLATFORM_MACOS
 	LD_FLAGS 	:=	-L$(VULKAN_SDK)/lib -L$(DEP_DIR)/glfw/build/src -lglfw3 -framework Cocoa -framework IOKit
 	LD_FLAGS	+=	-lvulkan
 else
