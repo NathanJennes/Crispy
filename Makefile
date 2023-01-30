@@ -73,9 +73,6 @@ DIRECTORIES			:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -t
 #----
 .PHONY: all
 all: before_build $(BIN_DIR)/$(NAME)
-	@if [ -f "$(RELEASE_MODE_FILE)" ]; then echo "[Build mode]: Release"; fi
-	@if [ -f "$(DEBUG_MODE_FILE)" ]; then echo "[Build mode]: Debug"; fi
-	@if [ -f "$(SANITIZE_MODE_FILE)" ]; then echo "[Build mode]: Sanitize" ; fi
 
 .PHONY: run
 run: all
@@ -150,6 +147,9 @@ before_build:
 $(BIN_DIR)/$(NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(OBJS) Makefile
 	@$(ECHO) $@
 	@$(CXX) $(OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS) $(BUILD_MODE_LD_FLAGS)
+	@if [ -f "$(RELEASE_MODE_FILE)" ]; then echo "[Build mode]: Release"; fi
+	@if [ -f "$(DEBUG_MODE_FILE)" ]; then echo "[Build mode]: Debug"; fi
+	@if [ -f "$(SANITIZE_MODE_FILE)" ]; then echo "[Build mode]: Sanitize" ; fi
 
 $(OBJ_DIR)/%.o: %.cpp $(GLFW_LIB) Makefile
 	@$(ECHO) $<
