@@ -205,6 +205,10 @@ Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
 
 void Vulkan::BasicRenderer::end_frame()
 {
+	if (!frame_started) {
+		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
+		return ;
+	}
 	vkResetFences(VulkanInstance::logical_device(), 1, &last_frame_presented_fence);
 	end_renderpass();
 	if (!end_command_buffer())
@@ -322,6 +326,13 @@ std::optional<u32> BasicRenderer::get_swapchain_image()
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 		SwapchainManager::recreate();
+		vkDestroySemaphore(VulkanInstance::logical_device(), image_available_semaphore, nullptr);
+		VkSemaphoreCreateInfo semaphore_infos{};
+		semaphore_infos.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		result = vkCreateSemaphore(VulkanInstance::logical_device(), &semaphore_infos, nullptr, &image_available_semaphore);
+		if (result != VK_SUCCESS) {
+			CORE_ERROR("Couldn't recreate image_available_semaphore in BasicRenderer: %s", vulkan_error_to_string(result));
+		}
 		return {};
 	} else if (result != VK_SUCCESS) {
 		CORE_ERROR("Couldn't acquire BasicRenderer's next swapchain image for rendering: %s", vulkan_error_to_string(result));

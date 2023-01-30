@@ -44,7 +44,7 @@ public:
 	static u32					get_width()				{ return width; }
 	static u32					get_height()			{ return height; }
 	static float				get_aspect_ratio()		{ return aspec_ratio; }
-	static float				is_mouse_locked()		{ return mouse_locked; }
+	static bool 				is_mouse_locked()		{ return mouse_locked; }
 	static const glm::vec2&		get_last_mouse_pos()	{ return last_mouse_pos; }
 	static const glm::vec2&		get_mouse_pos()			{ return mouse_pos; }
 
