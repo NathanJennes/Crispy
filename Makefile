@@ -4,7 +4,7 @@
 ifndef ECHO
 HIT_TOTAL != ${MAKE} ${MAKECMDGOALS} --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK"
 HIT_COUNT = $(eval HIT_N != expr ${HIT_N} + 1)${HIT_N}
-ECHO = echo "[`expr ${HIT_COUNT} '*' 100 / ${HIT_TOTAL}`%]"
+ECHO = echo -e "[`expr ${HIT_COUNT} '*' 100 / ${HIT_TOTAL}`%]\t"
 endif
 
 # ==============================================================================
@@ -171,22 +171,22 @@ before_build:
 #	Compilation
 # ==============================================================================
 $(BIN_DIR)/$(NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(OBJS) Makefile
-	@$(ECHO) $@
+	@$(ECHO) "$(_BLUE)" $@ "$(_END)"
 	@$(CXX) $(OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS) $(BUILD_MODE_LD_FLAGS)
 	@if [ -f "$(RELEASE_MODE_FILE)" ]; then echo "[Build mode]: Release"; fi
 	@if [ -f "$(DEBUG_MODE_FILE)" ]; then echo "[Build mode]: Debug"; fi
 	@if [ -f "$(SANITIZE_MODE_FILE)" ]; then echo "[Build mode]: Sanitize" ; fi
 
 $(OBJ_DIR)/%.o: %.cpp $(GLFW_LIB) Makefile
-	@$(ECHO) $<
+	@$(ECHO) "$(_CYAN)" $< "$(_END)"
 	@$(CXX) $< $(CXX_FLAGS) $(BUILD_MODE_CXX_FLAGS) -c -o $@
 
 $(OBJ_DIR)/%.vert.spv: %.vert.glsl $(GLFW_LIB) Makefile
-	@$(ECHO) $<
+	@$(ECHO) "$(_PURPLE)" $< "$(_END)"
 	@$(SPIRV_COMPILER) -fshader-stage=vertex -o $@ $<
 
 $(OBJ_DIR)/%.frag.spv: %.frag.glsl $(GLFW_LIB) Makefile
-	@$(ECHO) $<
+	@$(ECHO) "$(_PURPLE)" $< "$(_END)"
 	@$(SPIRV_COMPILER) -fshader-stage=fragment -o $@ $<
 
 $(GLFW_LIB):
@@ -197,3 +197,17 @@ $(GLFW_LIB):
 	@cd $(ROOT_DIR)
 
 -include $(OBJS:.o=.d)
+
+# ==============================================================================
+#	Extra
+# ==============================================================================
+_GREY	= \033[30m
+_RED	= \033[31m
+_ORANGE	= \033[38;5;209m
+_GREEN	= \033[32m
+_YELLOW	= \033[33m
+_BLUE	= \033[34m
+_PURPLE	= \033[35m
+_CYAN	= \033[36m
+_WHITE	= \033[37m
+_END	= \033[0m
