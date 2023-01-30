@@ -1,21 +1,63 @@
+# ==============================================================================
+#	Progress bar
+# ==============================================================================
 ifndef ECHO
 HIT_TOTAL != ${MAKE} ${MAKECMDGOALS} --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK"
 HIT_COUNT = $(eval HIT_N != expr ${HIT_N} + 1)${HIT_N}
 ECHO = echo "[`expr ${HIT_COUNT} '*' 100 / ${HIT_TOTAL}`%]"
 endif
 
+# ==============================================================================
+#	Makefile setup and global variables
+# ==============================================================================
 MAKEFLAGS		+=		--no-print-directory -r -R
 THIS_MAKEFILE	:=		$(lastword $(MAKEFILE_LIST))
+ROOT_DIR		:=		$(PWD)
 
+# ==============================================================================
+#	Build mode management
+# ==============================================================================
+RELEASE_MODE_FILE		:=	.release_mode
+DEBUG_MODE_FILE			:=	.debug_mode
+SANITIZE_MODE_FILE		:=	.sanitize_mode
+BUILD_OPTIONS_FILE		:=	.build_infos
+
+BUILD_MODE_CXX_FLAGS	=	$(shell sed -n '1p' $(BUILD_OPTIONS_FILE))
+BUILD_MODE_LD_FLAGS		=	$(shell sed -n '2p' $(BUILD_OPTIONS_FILE))
+
+# ==============================================================================
+#	Project name
+# ==============================================================================
 NAME		:=		vulkan
 
-ROOT_DIR	:=		$(PWD)
+# ==============================================================================
+#	Project environment
+# ==============================================================================
 BIN_DIR		:=		bin
 OBJ_DIR		:=		obj
 SRC_DIR		:=		src
 DEP_DIR		:=		dependencies
+SHADER_DIR	:=		shaders
+DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -type d)
 
-CXX			:=		g++
+# ==============================================================================
+#	Project sources
+# ==============================================================================
+SRCS				:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
+OBJS				:=		$(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRCS:.cpp=)))
+
+SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
+COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
+
+# ==============================================================================
+#	Compilers
+# ==============================================================================
+CXX				:=	g++
+SPIRV_COMPILER	:=	$(VULKAN_SDK)/bin/glslc
+
+# ==============================================================================
+#	Compilation and linking flags
+# ==============================================================================
 CXX_FLAGS	:=		-Wall -Wextra -Werror -std=c++17
 CXX_FLAGS	+=		-MD -DGLM_FORCE_RADIANS
 CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)/glfw/include/GLFW -I$(DEP_DIR)
@@ -32,17 +74,9 @@ else
 	$(error "Unsupported OS")
 endif
 
-#----
-# Build mode file
-#----
-RELEASE_MODE_FILE	:=	.release_mode
-DEBUG_MODE_FILE		:=	.debug_mode
-SANITIZE_MODE_FILE	:=	.sanitize_mode
-BUILD_OPTIONS_FILE	:=	.build_infos
-
-#----
-# Build mode specific flags
-#----
+# ==============================================================================
+#	Build mode-specific flags
+# ==============================================================================
 RELEASE_CXX_FLAGS	:=	-O3
 RELEASE_LD_FLAGS	:=
 
@@ -52,25 +86,14 @@ DEBUG_LD_FLAGS		:=
 SANITIZE_CXX_FLAGS	:=	$(DEBUG_CXX_FLAGS) -fsanitize=address
 SANITIZE_LD_FLAGS	:=	-fsanitize=address
 
-BUILD_MODE_CXX_FLAGS = $(shell sed -n '1p' $(BUILD_OPTIONS_FILE))
-BUILD_MODE_LD_FLAGS = $(shell sed -n '2p' $(BUILD_OPTIONS_FILE))
-
-SRCS		:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
-OBJS		:=		$(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRCS:.cpp=)))
-
+# ==============================================================================
+#	Libs
+# ==============================================================================
 GLFW_LIB	:=		$(DEP_DIR)/glfw/build/src/libglfw3.a
 
-SHADER_DIR			:=		shaders
-SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
-COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
-
-SPIRV_COMPILER		:=		$(VULKAN_SDK)/bin/glslc
-
-DIRECTORIES			:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -type d)
-
-#----
-# Main commands
-#----
+# ==============================================================================
+#	Main commands
+# ==============================================================================
 .PHONY: all
 all: before_build $(BIN_DIR)/$(NAME)
 
@@ -91,9 +114,9 @@ fclean: clean
 re: fclean
 	@$(MAKE) -f $(THIS_MAKEFILE) all
 
-#----
-# Build Modes
-#----
+# ==============================================================================
+#	Build mode commands
+# ==============================================================================
 .PHONY: release
 release: $(RELEASE_MODE_FILE)
 	@$(MAKE) -f $(THIS_MAKEFILE) all
@@ -106,6 +129,9 @@ debug: $(DEBUG_MODE_FILE)
 sanitize: $(SANITIZE_MODE_FILE)
 	@$(MAKE) -f $(THIS_MAKEFILE) all
 
+# ==============================================================================
+#	Build mode file creation
+# ==============================================================================
 $(BUILD_OPTIONS_FILE):
 	@touch $(BUILD_OPTIONS_FILE)
 	@echo "$(RELEASE_CXX_FLAGS)" > $(BUILD_OPTIONS_FILE)
@@ -132,18 +158,18 @@ $(SANITIZE_MODE_FILE):
 	@echo "$(SANITIZE_CXX_FLAGS)" > $(BUILD_OPTIONS_FILE)
 	@echo "$(SANITIZE_LD_FLAGS)" >> $(BUILD_OPTIONS_FILE)
 
-#----
-# Build workspace setup
-#----
+# ==============================================================================
+#	Project workspace setup
+# ==============================================================================
 .PHONY: before_build
 before_build:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(addprefix $(OBJ_DIR)/, $(DIRECTORIES))
 
 
-#----
-# Compilation
-#----
+# ==============================================================================
+#	Compilation
+# ==============================================================================
 $(BIN_DIR)/$(NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(OBJS) Makefile
 	@$(ECHO) $@
 	@$(CXX) $(OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS) $(BUILD_MODE_LD_FLAGS)
