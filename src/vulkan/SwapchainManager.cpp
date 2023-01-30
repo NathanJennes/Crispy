@@ -155,11 +155,13 @@ bool SwapchainManager::create_framebuffers()
 	swapchain_framebuffers().resize(swapchain_image_views().size());
 
 	for (size_t i = 0; i < swapchain_image_views().size(); i++) {
+		std::array<VkImageView, 2> attachments = { _swapchain_image_views[i], depth_image_view };
+
 		VkFramebufferCreateInfo create_infos{};
 		create_infos.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		create_infos.renderPass = GraphicsPipeline::render_pass();
-		create_infos.attachmentCount = 1;
-		create_infos.pAttachments = &swapchain_image_views()[i];
+		create_infos.attachmentCount = attachments.size();
+		create_infos.pAttachments = attachments.data();
 		create_infos.width = swapchain_extent().width;
 		create_infos.height = swapchain_extent().height;
 		create_infos.layers = 1;

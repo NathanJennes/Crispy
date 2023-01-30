@@ -400,9 +400,12 @@ void BasicRenderer::begin_renderpass()
 	render_pass_infos.renderArea.offset = {0, 0};
 	render_pass_infos.renderArea.extent = SwapchainManager::swapchain_extent();
 
-	VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-	render_pass_infos.clearValueCount = 1;
-	render_pass_infos.pClearValues = &clear_color;
+	std::array<VkClearValue, 2> clear_colors{};
+	clear_colors[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+	clear_colors[1].depthStencil = {1.0f, 0};
+
+	render_pass_infos.clearValueCount = clear_colors.size();
+	render_pass_infos.pClearValues = clear_colors.data();
 
 	vkCmdBeginRenderPass(command_buffer, &render_pass_infos, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline::pipeline());
