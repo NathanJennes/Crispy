@@ -59,7 +59,7 @@ SPIRV_COMPILER	:=	$(VULKAN_SDK)/bin/glslc
 #	Compilation and linking flags
 # ==============================================================================
 CXX_FLAGS	:=		-Wall -Wextra -Werror -std=c++17
-CXX_FLAGS	+=		-MD -DGLM_FORCE_RADIANS
+CXX_FLAGS	+=		-MD -DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE
 CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)/glfw/include/GLFW -I$(DEP_DIR)
 
 ifeq ($(shell uname), Linux)
