@@ -119,26 +119,38 @@ bool GraphicsPipeline::initialize()
 	multisampling.alphaToCoverageEnable = VK_FALSE;
 	multisampling.alphaToOneEnable = VK_FALSE;
 
-	VkPipelineColorBlendAttachmentState colorBlend_attachment{};
-	colorBlend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlend_attachment.blendEnable = VK_FALSE;
-	colorBlend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlend_attachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	colorBlend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlend_attachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+	VkPipelineColorBlendAttachmentState color_blend_attachment{};
+	color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	color_blend_attachment.blendEnable = VK_FALSE;
+	color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+	color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+	color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+	color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+	color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+	color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
 
 	VkPipelineColorBlendStateCreateInfo color_blending{};
 	color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	color_blending.logicOpEnable = VK_FALSE;
 	color_blending.logicOp = VK_LOGIC_OP_COPY; // Optional
 	color_blending.attachmentCount = 1;
-	color_blending.pAttachments = &colorBlend_attachment;
+	color_blending.pAttachments = &color_blend_attachment;
 	color_blending.blendConstants[0] = 0.0f; // Optional
 	color_blending.blendConstants[1] = 0.0f; // Optional
 	color_blending.blendConstants[2] = 0.0f; // Optional
 	color_blending.blendConstants[3] = 0.0f; // Optional
+
+	VkPipelineDepthStencilStateCreateInfo depth_stencil_infos{};
+	depth_stencil_infos.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depth_stencil_infos.depthTestEnable = VK_TRUE;
+	depth_stencil_infos.depthWriteEnable = VK_TRUE;
+	depth_stencil_infos.depthCompareOp = VK_COMPARE_OP_LESS;
+	depth_stencil_infos.depthBoundsTestEnable = VK_FALSE;
+	depth_stencil_infos.minDepthBounds = 0.0f; // Optional
+	depth_stencil_infos.maxDepthBounds = 1.0f; // Optional
+	depth_stencil_infos.stencilTestEnable = VK_FALSE;
+	depth_stencil_infos.front = {}; // Optional
+	depth_stencil_infos.back = {}; // Optional
 
 	VkPushConstantRange push_constants{};
 	push_constants.offset = 0;
@@ -168,7 +180,7 @@ bool GraphicsPipeline::initialize()
 	create_infos.pViewportState = &viewport_state_create_infos;
 	create_infos.pRasterizationState = &rasterizer;
 	create_infos.pMultisampleState = &multisampling;
-	create_infos.pDepthStencilState = nullptr;
+	create_infos.pDepthStencilState = &depth_stencil_infos;
 	create_infos.pColorBlendState = &color_blending;
 	create_infos.pDynamicState = &dynamic_state_create_infos;
 	create_infos.layout = pipeline_layout();
@@ -226,27 +238,43 @@ bool GraphicsPipeline::initialize_render_pass()
 	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+	VkAttachmentDescription depth_attachment{};
+	depth_attachment.format = SwapchainManager::find_depth_format();
+	depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 	VkAttachmentReference color_attachment_ref{};
 	color_attachment_ref.attachment = 0;
 	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depth_attachment_ref{};
+	depth_attachment_ref.attachment = 1;
+	depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &color_attachment_ref;
+	subpass.pDepthStencilAttachment = &depth_attachment_ref;
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
+	VkAttachmentDescription attachments[] = {color_attachment, depth_attachment};
 	VkRenderPassCreateInfo create_infos{};
 	create_infos.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	create_infos.attachmentCount = 1;
-	create_infos.pAttachments = &color_attachment;
+	create_infos.attachmentCount = 2;
+	create_infos.pAttachments = attachments;
 	create_infos.subpassCount = 1;
 	create_infos.pSubpasses = &subpass;
 	create_infos.dependencyCount = 1;
