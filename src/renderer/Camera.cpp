@@ -63,15 +63,15 @@ void Camera::update()
 	position += movement;
 
 	glm::vec2 mouse_movement = (Window::get_mouse_pos() - Window::get_last_mouse_pos());
-	mouse_movement *= sensitivity;
-	std::cout << "Mouse movement: " << mouse_movement.x << ", " << mouse_movement.y << std::endl;
-	rotation.y += mouse_movement.x;
-	rotation.x -= mouse_movement.y;
-	if (rotation.x > 80.0f)
-		rotation.x = 80.0f;
-	if (rotation.x < -80.0f)
-		rotation.x = 80.0f;
-	std::cout << "Rotation: " << rotation.x << ", " << rotation.y << std::endl;
+	if (Window::is_mouse_locked()) {
+		mouse_movement *= sensitivity;
+		rotation.y += mouse_movement.x;
+		rotation.x -= mouse_movement.y;
+		if (rotation.x > 80.0f)
+			rotation.x = 80.0f;
+		if (rotation.x < -80.0f)
+			rotation.x = 80.0f;
+	}
 
 	bool need_to_recalculate_camera_matrix = false;
 	if (movement.x != 0.0f || movement.y != 0.0f || movement.z != 0.0f) {
