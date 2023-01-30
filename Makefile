@@ -1,3 +1,9 @@
+ifndef ECHO
+HIT_TOTAL != ${MAKE} ${MAKECMDGOALS} --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK"
+HIT_COUNT = $(eval HIT_N != expr ${HIT_N} + 1)${HIT_N}
+ECHO = echo "[`expr ${HIT_COUNT} '*' 100 / ${HIT_TOTAL}`%]"
+endif
+
 MAKEFLAGS		+=		--no-print-directory -r -R
 THIS_MAKEFILE	:=		$(lastword $(MAKEFILE_LIST))
 
@@ -66,6 +72,9 @@ DIRECTORIES			:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -t
 #----
 .PHONY: all
 all: before_build $(BIN_DIR)/$(NAME)
+	@if [ -f "$(RELEASE_MODE_FILE)" ]; then echo "[Build mode]: Release"; fi
+	@if [ -f "$(DEBUG_MODE_FILE)" ]; then echo "[Build mode]: Debug"; fi
+	@if [ -f "$(SANITIZE_MODE_FILE)" ]; then echo "[Build mode]: Sanitize" ; fi
 
 .PHONY: run
 run: all
@@ -87,11 +96,11 @@ re: fclean all
 # Build Modes
 #----
 .PHONY: release
-release: $(RELEASE_MODE_FILE) all
+release: $(RELEASE_MODE_FILE)
 	@$(MAKE) -f $(THIS_MAKEFILE) all
 
 .PHONY: debug
-debug: $(DEBUG_MODE_FILE) all
+debug: $(DEBUG_MODE_FILE)
 	@$(MAKE) -f $(THIS_MAKEFILE) all
 
 .PHONY: sanitize
@@ -131,27 +140,25 @@ $(SANITIZE_MODE_FILE): $(BUILD_OPTIONS_FILE)
 before_build:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(addprefix $(OBJ_DIR)/, $(DIRECTORIES))
-	@if [ -f "$(RELEASE_MODE_FILE)" ]; then echo "[Build mode]: Release"; fi
-	@if [ -f "$(DEBUG_MODE_FILE)" ]; then echo "[Build mode]: Debug"; fi
-	@if [ -f "$(SANITIZE_MODE_FILE)" ]; then echo "[Build mode]: Sanitize" ; fi
+
 
 #----
 # Compilation
 #----
 $(BIN_DIR)/$(NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(OBJS) Makefile
-	@echo "creating executable $(NAME)..."
+	@$(ECHO) $@
 	@$(CXX) $(OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS) $(BUILD_MODE_LD_FLAGS)
 
-$(OBJ_DIR)/%.o: %.cpp Makefile
-	@echo   $<...
+$(OBJ_DIR)/%.o: %.cpp $(GLFW_LIB) Makefile
+	@$(ECHO) $<
 	@$(CXX) $< $(CXX_FLAGS) $(BUILD_MODE_CXX_FLAGS) -c -o $@
 
-$(OBJ_DIR)/%.vert.spv: %.vert.glsl Makefile
-	@echo   $<...
+$(OBJ_DIR)/%.vert.spv: %.vert.glsl $(GLFW_LIB) Makefile
+	@$(ECHO) $<
 	@$(SPIRV_COMPILER) -fshader-stage=vertex -o $@ $<
 
-$(OBJ_DIR)/%.frag.spv: %.frag.glsl Makefile
-	@echo   $<...
+$(OBJ_DIR)/%.frag.spv: %.frag.glsl $(GLFW_LIB) Makefile
+	@$(ECHO) $<
 	@$(SPIRV_COMPILER) -fshader-stage=fragment -o $@ $<
 
 $(GLFW_LIB):
