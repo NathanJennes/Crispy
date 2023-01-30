@@ -90,7 +90,8 @@ fclean: clean
 	@rm -rf $(DEP_DIR)/glfw/build
 
 .PHONY: re
-re: fclean all
+re: fclean
+	@$(MAKE) -f $(THIS_MAKEFILE) all
 
 #----
 # Build Modes
