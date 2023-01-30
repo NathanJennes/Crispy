@@ -38,6 +38,13 @@ void SwapchainManager::shutdown()
 
 bool SwapchainManager::recreate()
 {
+	u32 width = Window::get_width(), height = Window::get_height();
+	while (width == 0 || height == 0) {
+		glfwWaitEventsTimeout(10.0);
+		width = Window::get_width();
+		height = Window::get_height();
+	}
+
 	vkDeviceWaitIdle(VulkanInstance::logical_device());
 	cleanup_swapchain();
 
