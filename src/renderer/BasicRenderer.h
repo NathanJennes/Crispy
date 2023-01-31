@@ -50,12 +50,21 @@ public:	// Types
 	class Model
 	{
 	public:
-		Model() = default;
-		Model(const Model& other) = default;
-		Model(Model&& other) noexcept = default;
-		Model& operator=(const Model& other) = default;
-		Model& operator=(Model&& other) noexcept = default;
+		Model()										= default;
+		Model(const Model& other)					= default;
+		Model(Model&& other) noexcept				= default;
+		Model& operator=(const Model& other)		= default;
+		Model& operator=(Model&& other) noexcept	= default;
 		~Model();
+
+		explicit Model(u32 new_id);
+
+		void	reset_id();
+
+		//----
+		// Getters
+		//----
+		[[nodiscard]] const std::optional<u32>&	get_id()	const { return id; }
 
 	private:
 		std::optional<u32>	id;
@@ -73,6 +82,35 @@ public:		// Methods
 	static void	draw(const Mesh& mesh, const glm::vec3& pos, const glm::vec3& rotation);
 	static void	draw(const Mesh& mesh, const glm::vec3& pos, const glm::vec3& rotation, const glm::vec3& scale);
 	static void	end_frame();
+
+	//----
+	// Model management
+	//----
+	static Model	load_model(const std::vector<Vertex>& vertices, const std::vector<u32>& indices);
+	static bool		unload_model(Model& model);
+
+private:	// Types
+	class ModelImpl
+	{
+	public:
+		ModelImpl()											= default;
+		ModelImpl(const ModelImpl& other)					= default;
+		ModelImpl(ModelImpl&& other) noexcept				= default;
+		ModelImpl& operator=(const ModelImpl& other)		= default;
+		ModelImpl& operator=(ModelImpl&& other) noexcept	= default;
+		~ModelImpl()										= default;
+
+		explicit ModelImpl(u32 new_id);
+
+		//----
+		// Getters
+		//----
+		[[nodiscard]] const std::optional<u32>&	get_id()	const { return id; }
+
+	private:
+		std::vector<Mesh>	meshes;
+		std::optional<u32>	id;
+	};
 
 private:	// Methods
 
@@ -108,6 +146,8 @@ private:	// Methods
 	static bool					submit_command_buffer();
 	static bool					present_frame();
 
+	static u32					find_next_available_model_id();
+
 private:	// Members
 	//----
 	// Synchronization
@@ -134,6 +174,11 @@ private:	// Members
 	//----
 	static VkCommandPool	command_pool;
 	static VkCommandBuffer	command_buffer;
+
+	//----
+	// Model management
+	//----
+	static std::vector<ModelImpl>	loaded_models;
 };
 
 }

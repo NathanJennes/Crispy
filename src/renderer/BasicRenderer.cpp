@@ -81,6 +81,16 @@ BasicRenderer::Model::~Model()
 {
 }
 
+BasicRenderer::Model::Model(u32 new_id)
+	: id(new_id)
+{
+}
+
+void BasicRenderer::Model::reset_id()
+{
+	id = {};
+}
+
 //----
 // Renderer
 //----
@@ -97,6 +107,8 @@ VkDescriptorSet		BasicRenderer::camera_descriptor_set = VK_NULL_HANDLE;
 
 VkCommandPool		BasicRenderer::command_pool = VK_NULL_HANDLE;
 VkCommandBuffer		BasicRenderer::command_buffer = VK_NULL_HANDLE;
+
+std::vector<BasicRenderer::ModelImpl>	BasicRenderer::loaded_models;
 
 bool Vulkan::BasicRenderer::initialize()
 {
@@ -507,5 +519,57 @@ void BasicRenderer::destroy_command_pool()
 {
 	if (command_pool != VK_NULL_HANDLE)
 		vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool, nullptr);
+}
+
+//----
+// Model management
+//----
+BasicRenderer::ModelImpl::ModelImpl(u32 new_id)
+	:id(new_id)
+{}
+
+BasicRenderer::Model BasicRenderer::load_model(const std::vector<Vertex> &vertices, const std::vector<u32> &indices)
+{
+	(void) vertices;
+	(void) indices;
+
+	u32 new_id = find_next_available_model_id();
+	loaded_models.emplace_back(new_id);
+
+	return Model(new_id);
+}
+
+bool BasicRenderer::unload_model(BasicRenderer::Model &model)
+{
+	if (!model.get_id().has_value()) {
+		CORE_WARN("Tried to unload an empty model");
+		return false;
+	}
+
+	for (auto it = loaded_models.begin(); it != loaded_models.end(); it++) {
+		if (!it->get_id().has_value())
+			continue;
+
+		if (model.get_id().value() == it->get_id().value()) {
+			loaded_models.erase(it);
+			model.reset_id();
+			return true;
+		}
+	}
+
+	CORE_ERROR("Tried to unload model with id %d, but no ModelImpl matching was found", model.get_id().value());
+	return false;
+}
+
+u32 BasicRenderer::find_next_available_model_id()
+{
+	// TODO: this can be better
+	static u32 id_counter = 0;
+
+	if (id_counter == std::numeric_limits<u32>::max()) {
+		CORE_ERROR("Maximum model id has been reached");
+	}
+
+	return id_counter++;
 }
 }
