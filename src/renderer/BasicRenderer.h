@@ -47,6 +47,20 @@ public:	// Types
 		u64		index_count;
 	}; // Mesh
 
+	class Model
+	{
+	public:
+		Model() = default;
+		Model(const Model& other) = default;
+		Model(Model&& other) noexcept = default;
+		Model& operator=(const Model& other) = default;
+		Model& operator=(Model&& other) noexcept = default;
+		~Model();
+
+	private:
+		std::optional<u32>	id;
+	};
+
 public:		// Methods
 	static bool	initialize();
 	static void	shutdown();

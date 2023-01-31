@@ -75,6 +75,13 @@ BasicRenderer::Mesh &Vulkan::BasicRenderer::Mesh::operator=(Vulkan::BasicRendere
 }
 
 //----
+// Model
+//----
+BasicRenderer::Model::~Model()
+{
+}
+
+//----
 // Renderer
 //----
 VkSemaphore			BasicRenderer::image_available_semaphore = VK_NULL_HANDLE;
