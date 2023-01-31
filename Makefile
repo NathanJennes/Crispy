@@ -228,7 +228,7 @@ $(GLFW_LIB):
 	cd build && make
 	@cd $(ROOT_DIR)
 
--include $(OBJS:.o=.d)
+-include $(RELEASE_OBJS:.o=.d) $(DEBUG_OBJS:.o=.d) $(SANITIZE_OBJS:.o=.d)
 
 # ==============================================================================
 #	Extra
