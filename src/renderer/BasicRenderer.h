@@ -16,7 +16,50 @@ namespace Vulkan
 class BasicRenderer
 {
 public:	// Types
+	class Model
+	{
+	public:
+		Model()	= default;
 
+		explicit Model(u32 new_id);
+		Model(const Model& other);
+		Model(Model&& other) noexcept;
+		Model& operator=(const Model& other);
+		Model& operator=(Model&& other) noexcept;
+		~Model();
+
+		void	reset_id();
+		void	unload();
+
+		//----
+		// Getters
+		//----
+		[[nodiscard]] const std::optional<u32>&	get_id()	const { return id; }
+
+	private:
+		std::optional<u32>	id;
+	};
+
+public:		// Methods
+	static bool	initialize();
+	static void	shutdown();
+
+	//----
+	// Drawing
+	//----
+	static void	begin_frame();
+	static void	draw(const Model& model, const glm::vec3& pos);
+	static void	draw(const Model& model, const glm::vec3& pos, const glm::vec3& rotation);
+	static void	draw(const Model& model, const glm::vec3& pos, const glm::vec3& rotation, const glm::vec3& scale);
+	static void	end_frame();
+
+	//----
+	// Model management
+	//----
+	static Model	load_model(const std::vector<Vertex>& vertices, const std::vector<u32>& indices);
+	static bool		unload_model(Model& model);
+
+private:	// Types
 	class Mesh
 	{
 	public:		// Methods
@@ -47,50 +90,6 @@ public:	// Types
 		u64		index_count;
 	}; // Mesh
 
-	class Model
-	{
-	public:
-		Model()										= default;
-		Model(const Model& other)					= default;
-		Model(Model&& other) noexcept				= default;
-		Model& operator=(const Model& other)		= default;
-		Model& operator=(Model&& other) noexcept	= default;
-		~Model();
-
-		explicit Model(u32 new_id);
-
-		void	reset_id();
-		void	unload();
-
-		//----
-		// Getters
-		//----
-		[[nodiscard]] const std::optional<u32>&	get_id()	const { return id; }
-
-	private:
-		std::optional<u32>	id;
-	};
-
-public:		// Methods
-	static bool	initialize();
-	static void	shutdown();
-
-	//----
-	// Drawing
-	//----
-	static void	begin_frame();
-	static void	draw(const Mesh& mesh, const glm::vec3& pos);
-	static void	draw(const Mesh& mesh, const glm::vec3& pos, const glm::vec3& rotation);
-	static void	draw(const Mesh& mesh, const glm::vec3& pos, const glm::vec3& rotation, const glm::vec3& scale);
-	static void	end_frame();
-
-	//----
-	// Model management
-	//----
-	static Model	load_model(const std::vector<Vertex>& vertices, const std::vector<u32>& indices);
-	static bool		unload_model(Model& model);
-
-private:	// Types
 	class ModelImpl
 	{
 	public:
@@ -103,15 +102,26 @@ private:	// Types
 
 		explicit ModelImpl(u32 new_id);
 
+		void	release_ressources();
+		void	add_reference()	{ reference_count++; }
+		void	remove_reference()	{ reference_count--; if (reference_count == 0) BasicRenderer::remove_model_from_list(*this); }
+
+		//----
+		// Mesh management
+		//----
+		void	add_mesh(const std::vector<Vertex>& vertices, const std::vector<u32>& indices);
+
 		//----
 		// Getters
 		//----
-		[[nodiscard]] const std::optional<u32>&	get_id()	const { return id; }
+		[[nodiscard]] const std::optional<u32>&	get_id()		const { return id; }
+		[[nodiscard]] const std::vector<Mesh>&	get_meshes()	const { return meshes; }
 
 	private:
 		std::vector<Mesh>	meshes;
 		std::optional<u32>	id;
-	};
+		u32					reference_count;
+	}; // ModelImpl
 
 private:	// Methods
 
@@ -147,7 +157,16 @@ private:	// Methods
 	static bool					submit_command_buffer();
 	static bool					present_frame();
 
+	//----
+	// Model management
+	//----
+	static void					remove_model_from_list(ModelImpl& model);
+	static void					load_default_model();
 	static u32					find_next_available_model_id();
+	static ModelImpl&			find_model_by_id(u32 id);
+	static bool					model_exists(u32 id);
+	static bool					add_reference_to_model(u32 id);
+	static bool					remove_reference_to_model(u32 id);
 
 private:	// Members
 	//----
@@ -160,6 +179,7 @@ private:	// Members
 	//----
 	// State
 	//----
+	static bool			alive;
 	static bool			frame_started;
 	static u32			current_image_index;
 
@@ -179,6 +199,7 @@ private:	// Members
 	//----
 	// Model management
 	//----
+	static ModelImpl				default_model;
 	static std::vector<ModelImpl>	loaded_models;
 };
 

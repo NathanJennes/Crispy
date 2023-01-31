@@ -8,6 +8,7 @@
 #include "vulkan/VulkanInstance.h"
 #include "renderer/BasicRenderer.h"
 #include "renderer/Camera.h"
+#include <random>
 
 namespace Vulkan {
 
@@ -30,7 +31,19 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 											Vertex({0.0f, -5.0f, 5.0f}, {0.0f, 0.0f, 1.0f})};
 
 	std::vector<u32> indices = {0, 1, 2, 0, 2, 3, 4, 5, 1, 4, 1, 0, 1, 5, 6, 1, 6, 2, 4, 0, 3, 4, 3, 7, 3, 2, 6, 3, 6, 7, 5, 4, 7, 5, 7, 6};
-	mesh = BasicRenderer::Mesh(vertices, indices);
+
+	for (auto & model : models)
+		model = BasicRenderer::load_model(vertices, indices);
+
+	std::random_device dev;
+	std::mt19937 rng(dev());
+	std::uniform_real_distribution<> rand(-30.0f,30.0f);
+
+	for (auto& position : positions) {
+		position.x = rand(rng);
+		position.y = rand(rng);
+		position.z = rand(rng);
+	}
 
 	_initialized_properly = true;
 }
@@ -38,7 +51,6 @@ Application::Application(const std::string &name, i32 x, i32 y, i32 width, i32 h
 Application::~Application()
 {
 	vkDeviceWaitIdle(VulkanInstance::logical_device());
-	mesh.release_resources();
 	BasicRenderer::shutdown();
 	Window::shutdown();
 }
@@ -56,10 +68,8 @@ void Application::update()
 	Camera::update();
 
 	BasicRenderer::begin_frame();
-	BasicRenderer::draw(mesh, {0.0f, 0.0f, 0.0f}, glm::vec3(0.0f, frames, 0.0f));
-	BasicRenderer::draw(mesh, {0.0f, 10.0f, 0.0f}, glm::vec3(0.0f, -frames, 0.0f));
-	BasicRenderer::draw(mesh, {0.0f, 0.0f, 10.0f}, glm::vec3(0.0f, frames, 0.0f));
-	BasicRenderer::draw(mesh, {10.0f, 0.0f, 10.0f}, glm::vec3(0.0f, -frames, 0.0f));
+	for (u32 i = 0; i < models.size(); i++)
+		BasicRenderer::draw(models[i], positions[i], glm::vec3(0.0f, frames, 0.0f));
 	BasicRenderer::end_frame();
 	frames += 0.005;
 }

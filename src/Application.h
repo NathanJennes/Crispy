@@ -22,7 +22,8 @@ public:
 
 private:
 	bool _initialized_properly;
-	BasicRenderer::Mesh mesh;
+	std::array<BasicRenderer::Model, 10>	models;
+	std::array<glm::vec3, 10>				positions;
 };
 
 }
