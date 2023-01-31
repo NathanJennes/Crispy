@@ -1,18 +1,19 @@
 # ==============================================================================
-#	Progress bar
-# ==============================================================================
-ifndef ECHO
-HIT_TOTAL != ${MAKE} ${MAKECMDGOALS} --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK"
-HIT_COUNT = $(eval HIT_N != expr ${HIT_N} + 1)${HIT_N}
-ECHO = echo -e "[`expr ${HIT_COUNT} '*' 100 / ${HIT_TOTAL}`%]\t"
-endif
-
-# ==============================================================================
 #	Makefile setup and global variables
 # ==============================================================================
 MAKEFLAGS		+=		--no-print-directory -r -R
 THIS_MAKEFILE	:=		$(lastword $(MAKEFILE_LIST))
 ROOT_DIR		:=		$(PWD)
+
+# ==============================================================================
+#	Progress bar
+# ==============================================================================
+ifndef ECHO
+HIT_TOTAL	:=	$(shell $(MAKE) $(MAKECMDGOALS) -f $(THIS_MAKEFILE) --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK")
+HIT_N		:=	0
+HIT_COUNT	=	$(eval HIT_N = $(shell expr $(HIT_N) + 1))$(HIT_N)
+ECHO		=	echo "[`expr $(HIT_COUNT) '*' 100 / $(HIT_TOTAL)`%]\t"
+endif
 
 # ==============================================================================
 #	Build mode management
