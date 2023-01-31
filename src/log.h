@@ -36,13 +36,17 @@ void log_message(bool newline, const char *error_level, const char *message, ...
 #endif
 
 #if LOG_WARN_ENABLED == 1
-# define CORE_WARN(message, ...) Vulkan::log_message(true, "WARN", message, ##__VA_ARGS__)
+# ifdef DEBUG
+#  define CORE_WARN(message, ...) Vulkan::log_message(false, "WARN", "[%s:%d %s()]\t", __FILE__, __LINE__, __func__); Vulkan::log_message(true, nullptr, message, ##__VA_ARGS__)
+# else
+#  define CORE_WARN(message, ...) Vulkan::log_message(true, "WARN", message, ##__VA_ARGS__)
+# endif
 #else
 # define CORE_WARN(message, ...)
 #endif
 
 #ifdef DEBUG
-# define CORE_ERROR(message, ...) Vulkan::log_message(false, "ERROR", "[%s:%d]\t", __FILE__, __LINE__); Vulkan::log_message(true, nullptr, message, ##__VA_ARGS__)
+# define CORE_ERROR(message, ...) Vulkan::log_message(false, "ERROR", "[%s:%d %s()]\t", __FILE__, __LINE__, __func__); Vulkan::log_message(true, nullptr, message, ##__VA_ARGS__)
 #else
 # define CORE_ERROR(message, ...) Vulkan::log_message(true, "ERROR", message, ##__VA_ARGS__);
 #endif
