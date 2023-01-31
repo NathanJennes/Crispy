@@ -95,7 +95,7 @@ GLFW_LIB	:=		$(DEP_DIR)/glfw/build/src/libglfw3.a
 #	Main commands
 # ==============================================================================
 .PHONY: all
-all: before_build $(BIN_DIR)/$(NAME)
+all: $(BUILD_OPTIONS_FILE) before_build $(BIN_DIR)/$(NAME)
 
 .PHONY: run
 run: all
@@ -133,9 +133,7 @@ sanitize: $(SANITIZE_MODE_FILE)
 #	Build mode file creation
 # ==============================================================================
 $(BUILD_OPTIONS_FILE):
-	@touch $(BUILD_OPTIONS_FILE)
-	@echo "$(RELEASE_CXX_FLAGS)" > $(BUILD_OPTIONS_FILE)
-	@echo "$(RELEASE_LD_FLAGS)" >> $(BUILD_OPTIONS_FILE)
+	@$(MAKE) -f $(THIS_MAKEFILE) $(RELEASE_MODE_FILE)
 
 $(RELEASE_MODE_FILE):
 	@rm -f $(DEBUG_MODE_FILE) $(SANITIZE_MODE_FILE)
