@@ -4,6 +4,13 @@
 MAKEFLAGS		+=		--no-print-directory -r -R
 THIS_MAKEFILE	:=		$(lastword $(MAKEFILE_LIST))
 ROOT_DIR		:=		$(PWD)
+ifeq ($(shell uname), Linux)
+	ECHO_BIN	:=	echo -e
+else ifeq ($(shell uname), Darwin)
+	ECHO_BIN	:=	echo
+else
+	$(error "Unsupported OS")
+endif
 
 # ==============================================================================
 #	Progress bar
@@ -12,7 +19,7 @@ ifndef ECHO
 HIT_TOTAL	:=	$(shell $(MAKE) $(MAKECMDGOALS) -f $(THIS_MAKEFILE) --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK")
 HIT_N		:=	0
 HIT_COUNT	=	$(eval HIT_N = $(shell expr $(HIT_N) + 1))$(HIT_N)
-ECHO		=	echo "[`expr $(HIT_COUNT) '*' 100 / $(HIT_TOTAL)`%]\t"
+ECHO		=	$(ECHO_BIN) "[`expr $(HIT_COUNT) '*' 100 / $(HIT_TOTAL)`%]\t"
 endif
 
 # ==============================================================================
