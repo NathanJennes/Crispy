@@ -1,14 +1,74 @@
-MAKEFLAGS	+=		--no-print-directory -r -R
+# ==============================================================================
+#	Makefile setup and global variables
+# ==============================================================================
+MAKEFLAGS		+=		--no-print-directory -r -R
+THIS_MAKEFILE	:=		$(lastword $(MAKEFILE_LIST))
+ROOT_DIR		:=		$(PWD)
+ifeq ($(shell uname), Linux)
+	ECHO_BIN	:=	echo -e
+else ifeq ($(shell uname), Darwin)
+	ECHO_BIN	:=	echo
+else
+	$(error "Unsupported OS")
+endif
 
-NAME		:=		vulkan
+# ==============================================================================
+#	Progress bar
+# ==============================================================================
+ifndef ECHO
+HIT_TOTAL	:=	$(shell $(MAKE) $(MAKECMDGOALS) -f $(THIS_MAKEFILE) --dry-run ECHO="HIT_MARK" | grep -c "HIT_MARK")
+HIT_N		:=	0
+HIT_COUNT	=	$(eval HIT_N = $(shell expr $(HIT_N) + 1))$(HIT_N)
+ECHO		=	$(ECHO_BIN) "[`expr $(HIT_COUNT) '*' 100 / $(HIT_TOTAL)`%]\t"
+endif
 
-ROOT_DIR	:=		$(PWD)
-BIN_DIR		:=		bin
-OBJ_DIR		:=		obj
-SRC_DIR		:=		src
-DEP_DIR		:=		dependencies
+# ==============================================================================
+#	Build mode management
+# ==============================================================================
+RELEASE_MODE_FILE		:=	.release_mode
+DEBUG_MODE_FILE			:=	.debug_mode
+SANITIZE_MODE_FILE		:=	.sanitize_mode
 
-CXX			:=		g++
+# ==============================================================================
+#	Project name
+# ==============================================================================
+RELEASE_NAME	:=	vulkan
+DEBUG_NAME		:=	debug_vulkan
+SANITIZE_NAME	:=	sanitize_vulkan
+
+# ==============================================================================
+#	Project environment
+# ==============================================================================
+BIN_DIR			:=		bin
+OBJ_DIR			:=		obj
+RELEASE_OBJDIR	:=		$(OBJ_DIR)/release
+DEBUG_OBJDIR	:=		$(OBJ_DIR)/debug
+SANITIZE_OBJDIR	:=		$(OBJ_DIR)/sanitize
+SRC_DIR			:=		src
+DEP_DIR			:=		dependencies
+SHADER_DIR		:=		shaders
+
+# ==============================================================================
+#	Project sources
+# ==============================================================================
+SRCS				:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
+OBJS				:=		$(SRCS:.cpp=.o)
+RELEASE_OBJS		:=		$(addprefix $(RELEASE_OBJDIR)/, $(OBJS))
+DEBUG_OBJS			:=		$(addprefix $(DEBUG_OBJDIR)/, $(OBJS))
+SANITIZE_OBJS		:=		$(addprefix $(SANITIZE_OBJDIR)/, $(OBJS))
+
+SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
+COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
+
+# ==============================================================================
+#	Compilers
+# ==============================================================================
+CXX				:=	g++
+SPIRV_COMPILER	:=	$(VULKAN_SDK)/bin/glslc
+
+# ==============================================================================
+#	Compilation and linking flags
+# ==============================================================================
 CXX_FLAGS	:=		-Wall -Wextra -Werror -std=c++17
 CXX_FLAGS	+=		-MD -DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE
 CXX_FLAGS	+=		-I$(SRC_DIR) -I$(VULKAN_SDK)/include -I$(DEP_DIR)/glfw/include/GLFW -I$(DEP_DIR)
@@ -25,35 +85,42 @@ else
 	$(error "Unsupported OS")
 endif
 
-# Debug modes
-ifeq ($(MAKECMDGOALS), debug)
-	CXX_FLAGS	+=	-g3 -DDEBUG
-else ifeq ($(MAKECMDGOALS), sanitize)
-	CXXFLAGS	+=	-g3 -DDEBUG -fsanitize=address
-	LD_FLAGS	+=	-fsanitize=address
-else
-	CXXFLAGS	+=	-O3
-endif
+# ==============================================================================
+#	Build mode-specific flags
+# ==============================================================================
+RELEASE_CXX_FLAGS	:=	-O3
+RELEASE_LD_FLAGS	:=
 
-SRCS		:=		$(shell find $(SRC_DIR) -type f -name *.cpp)
-OBJS		:=		$(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRCS:.cpp=)))
+DEBUG_CXX_FLAGS		:=	-g3 -DDEBUG
+DEBUG_LD_FLAGS		:=
 
+SANITIZE_CXX_FLAGS	:=	$(DEBUG_CXX_FLAGS) -fsanitize=address
+SANITIZE_LD_FLAGS	:=	-fsanitize=address
+
+# ==============================================================================
+#	Libs
+# ==============================================================================
 GLFW_LIB	:=		$(DEP_DIR)/glfw/build/src/libglfw3.a
 
-SHADER_DIR			:=		shaders
-SHADERS				:=		$(shell find $(SHADER_DIR) -type f -name *.glsl)
-COMPILED_SHADERS	:=		$(addprefix $(OBJ_DIR)/, $(SHADERS:.glsl=.spv))
-
-SPIRV_COMPILER		:=		$(VULKAN_SDK)/bin/glslc
-
-DIRECTORIES	:=		$(shell find $(SRC_DIR) -type d) $(shell find $(SHADER_DIR) -type d)
+# ==============================================================================
+#	Main commands
+# ==============================================================================
+.PHONY: default
+default:
+	@if [ -f "$(RELEASE_MODE_FILE)" ]; then $(MAKE) -f $(THIS_MAKEFILE) $(BIN_DIR)/$(RELEASE_NAME); \
+	elif [ -f "$(DEBUG_MODE_FILE)" ]; then $(MAKE) -f $(THIS_MAKEFILE) $(BIN_DIR)/$(DEBUG_NAME); \
+	elif [ -f "$(SANITIZE_MODE_FILE)" ]; then $(MAKE) -f $(THIS_MAKEFILE) $(BIN_DIR)/$(SANITIZE_NAME); \
+	else $(MAKE) -f $(THIS_MAKEFILE) release; fi
 
 .PHONY: all
-all: before_build $(BIN_DIR)/$(NAME)
+all: $(RELEASE_MODE_FILE) $(BIN_DIR)/$(RELEASE_NAME) $(BIN_DIR)/$(DEBUG_NAME) $(BIN_DIR)/$(SANITIZE_NAME)
+	@$(ECHO_BIN) "[Make all]: make, make run and make re will now target $(_GREEN)release$(_END) mode"
 
 .PHONY: run
-run: all
-	./$(BIN_DIR)/$(NAME)
+run: default
+	@if [ -f "$(RELEASE_MODE_FILE)" ]; then ./$(BIN_DIR)/$(RELEASE_NAME); fi
+	@if [ -f "$(DEBUG_MODE_FILE)" ]; then ./$(BIN_DIR)/$(DEBUG_NAME); fi
+	@if [ -f "$(SANITIZE_MODE_FILE)" ]; then ./$(BIN_DIR)/$(SANITIZE_NAME); fi
 
 .PHONY: clean
 clean:
@@ -65,33 +132,93 @@ fclean: clean
 	@rm -rf $(DEP_DIR)/glfw/build
 
 .PHONY: re
-re: fclean all
+re: fclean
+	@$(MAKE) -f $(THIS_MAKEFILE) default
+
+# ==============================================================================
+#	Build mode commands
+# ==============================================================================
+.PHONY: release
+release: $(RELEASE_MODE_FILE) $(BIN_DIR)/$(RELEASE_NAME)
+	@$(ECHO_BIN) "[Make release]: make, make run and make re will now target $(_GREEN)release$(_END) mode"
 
 .PHONY: debug
-debug: all
+debug: $(DEBUG_MODE_FILE) $(BIN_DIR)/$(DEBUG_NAME)
+	@$(ECHO_BIN) "[Make debug]: make, make run and make re will now target $(_BLUE)debug$(_END) mode"
 
 .PHONY: sanitize
-sanitize: all
+sanitize: $(SANITIZE_MODE_FILE) $(BIN_DIR)/$(SANITIZE_NAME)
+	@$(ECHO_BIN) "[Make sanitize]: make, make run and make re will now target $(_ORANGE)sanitize$(_END) mode"
 
-.PHONY: before_build
-before_build:
+# ==============================================================================
+#	Build mode file creation
+# ==============================================================================
+
+$(RELEASE_MODE_FILE):
+	@rm -f $(DEBUG_MODE_FILE) $(SANITIZE_MODE_FILE)
+	@touch $(RELEASE_MODE_FILE)
+
+$(DEBUG_MODE_FILE):
+	@rm -f $(RELEASE_MODE_FILE) $(SANITIZE_MODE_FILE)
+	@touch $(DEBUG_MODE_FILE)
+
+$(SANITIZE_MODE_FILE):
+	@rm -f $(DEBUG_MODE_FILE) $(RELEASE_MODE_FILE)
+	@touch $(SANITIZE_MODE_FILE)
+
+# ==============================================================================
+#	Project workspace setup
+# ==============================================================================
+$(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
-	@mkdir -p $(addprefix $(OBJ_DIR)/, $(DIRECTORIES))
 
-$(BIN_DIR)/$(NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(OBJS) Makefile
-	@echo "creating executable $(NAME)..."
-	@$(CXX) $(OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(NAME) $(LD_FLAGS)
+$(OBJ_DIR)/$(SHADER_DIR):
+	@mkdir -p $(OBJ_DIR)/$(SHADER_DIR)
 
-$(OBJ_DIR)/%.o: %.cpp Makefile
-	@echo   $<...
-	@$(CXX) $< $(CXX_FLAGS) -c -o $@
+# ==============================================================================
+#	Compilation
+# ==============================================================================
 
-$(OBJ_DIR)/%.vert.spv: %.vert.glsl Makefile
-	@echo   $<...
+#====Release build====#
+$(BIN_DIR)/$(RELEASE_NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(RELEASE_OBJS) Makefile | $(BIN_DIR)
+	@$(ECHO) "$(_GREEN)$@$(_END)"
+	@$(CXX) $(RELEASE_OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(RELEASE_NAME) $(LD_FLAGS) $(RELEASE_LD_FLAGS)
+	@$(ECHO_BIN) "$(_GREEN)[Build mode]: Release$(_END)"
+
+$(RELEASE_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
+	@$(ECHO) "$(_GREEN)$<$(_END)"
+	@mkdir -p $(dir $@)
+	@$(CXX) $< $(CXX_FLAGS) $(RELEASE_CXX_FLAGS) -c -o $@
+
+#====Debug build====#
+$(BIN_DIR)/$(DEBUG_NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(DEBUG_OBJS) Makefile | $(BIN_DIR)
+	@$(ECHO) "$(_BLUE)$@$(_END)"
+	@$(CXX) $(DEBUG_OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(DEBUG_NAME) $(LD_FLAGS) $(DEBUG_LD_FLAGS)
+	@$(ECHO_BIN) "$(_BLUE)[Build mode]: Debug$(_END)"
+
+$(DEBUG_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
+	@$(ECHO) "$(_BLUE)$<$(_END)"
+	@mkdir -p $(dir $@)
+	@$(CXX) $< $(CXX_FLAGS) $(DEBUG_CXX_FLAGS) -c -o $@
+
+#====Sanitize build====#
+$(BIN_DIR)/$(SANITIZE_NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(SANITIZE_OBJS) Makefile | $(BIN_DIR)
+	@$(ECHO) "$(_ORANGE)$@$(_END)"
+	@$(CXX) $(SANITIZE_OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(SANITIZE_NAME) $(LD_FLAGS) $(SANITIZE_LD_FLAGS)
+	@$(ECHO_BIN) "$(_ORANGE)[Build mode]: Sanitize$(_END)"
+
+$(SANITIZE_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
+	@$(ECHO) "$(_ORANGE)$<$(_END)"
+	@mkdir -p $(dir $@)
+	@$(CXX) $< $(CXX_FLAGS) $(SANITIZE_CXX_FLAGS) -c -o $@
+
+#====Shaders====#
+$(OBJ_DIR)/%.vert.spv: %.vert.glsl $(GLFW_LIB) Makefile | $(OBJ_DIR)/$(SHADER_DIR)
+	@$(ECHO) "$(_PURPLE)$<$(_END)"
 	@$(SPIRV_COMPILER) -fshader-stage=vertex -o $@ $<
 
-$(OBJ_DIR)/%.frag.spv: %.frag.glsl Makefile
-	@echo   $<...
+$(OBJ_DIR)/%.frag.spv: %.frag.glsl $(GLFW_LIB) Makefile | $(OBJ_DIR)/$(SHADER_DIR)
+	@$(ECHO) "$(_PURPLE)$<$(_END)"
 	@$(SPIRV_COMPILER) -fshader-stage=fragment -o $@ $<
 
 $(GLFW_LIB):
@@ -102,3 +229,17 @@ $(GLFW_LIB):
 	@cd $(ROOT_DIR)
 
 -include $(OBJS:.o=.d)
+
+# ==============================================================================
+#	Extra
+# ==============================================================================
+_GREY	= \033[30m
+_RED	= \033[31m
+_ORANGE	= \033[38;5;209m
+_GREEN	= \033[32m
+_YELLOW	= \033[33m
+_BLUE	= \033[34m
+_PURPLE	= \033[35m
+_CYAN	= \033[36m
+_WHITE	= \033[37m
+_END	= \033[0m

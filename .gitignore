@@ -4,3 +4,7 @@ obj/
 obj/*
 .idea/
 .idea/*
+.build_infos
+.release_mode
+.debug_mode
+.sanitize_mode
