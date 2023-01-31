@@ -114,7 +114,7 @@ default:
 
 .PHONY: all
 all: $(RELEASE_MODE_FILE) $(BIN_DIR)/$(RELEASE_NAME) $(BIN_DIR)/$(DEBUG_NAME) $(BIN_DIR)/$(SANITIZE_NAME)
-	@echo "[Make all]: make, make run and make re will now target $(_GREEN)release$(_END) mode"
+	@$(ECHO_BIN) "[Make all]: make, make run and make re will now target $(_GREEN)release$(_END) mode"
 
 .PHONY: run
 run: default
@@ -140,15 +140,15 @@ re: fclean
 # ==============================================================================
 .PHONY: release
 release: $(RELEASE_MODE_FILE) $(BIN_DIR)/$(RELEASE_NAME)
-	@echo "[Make release]: make, make run and make re will now target $(_GREEN)release$(_END) mode"
+	@$(ECHO_BIN) "[Make release]: make, make run and make re will now target $(_GREEN)release$(_END) mode"
 
 .PHONY: debug
 debug: $(DEBUG_MODE_FILE) $(BIN_DIR)/$(DEBUG_NAME)
-	@echo "[Make debug]: make, make run and make re will now target $(_BLUE)debug$(_END) mode"
+	@$(ECHO_BIN) "[Make debug]: make, make run and make re will now target $(_BLUE)debug$(_END) mode"
 
 .PHONY: sanitize
 sanitize: $(SANITIZE_MODE_FILE) $(BIN_DIR)/$(SANITIZE_NAME)
-	@echo "[Make sanitize]: make, make run and make re will now target $(_ORANGE)sanitize$(_END) mode"
+	@$(ECHO_BIN) "[Make sanitize]: make, make run and make re will now target $(_ORANGE)sanitize$(_END) mode"
 
 # ==============================================================================
 #	Build mode file creation
@@ -183,7 +183,7 @@ $(OBJ_DIR)/$(SHADER_DIR):
 $(BIN_DIR)/$(RELEASE_NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(RELEASE_OBJS) Makefile | $(BIN_DIR)
 	@$(ECHO) "$(_GREEN)$@$(_END)"
 	@$(CXX) $(RELEASE_OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(RELEASE_NAME) $(LD_FLAGS) $(RELEASE_LD_FLAGS)
-	@echo "$(_GREEN)[Build mode]: Release$(_END)"
+	@$(ECHO_BIN) "$(_GREEN)[Build mode]: Release$(_END)"
 
 $(RELEASE_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
 	@$(ECHO) "$(_GREEN)$<$(_END)"
@@ -194,7 +194,7 @@ $(RELEASE_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
 $(BIN_DIR)/$(DEBUG_NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(DEBUG_OBJS) Makefile | $(BIN_DIR)
 	@$(ECHO) "$(_BLUE)$@$(_END)"
 	@$(CXX) $(DEBUG_OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(DEBUG_NAME) $(LD_FLAGS) $(DEBUG_LD_FLAGS)
-	@echo "$(_BLUE)[Build mode]: Debug$(_END)"
+	@$(ECHO_BIN) "$(_BLUE)[Build mode]: Debug$(_END)"
 
 $(DEBUG_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
 	@$(ECHO) "$(_BLUE)$<$(_END)"
@@ -205,7 +205,7 @@ $(DEBUG_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
 $(BIN_DIR)/$(SANITIZE_NAME): $(GLFW_LIB) $(COMPILED_SHADERS) $(SANITIZE_OBJS) Makefile | $(BIN_DIR)
 	@$(ECHO) "$(_ORANGE)$@$(_END)"
 	@$(CXX) $(SANITIZE_OBJS) $(GLFW_LIB) -o $(BIN_DIR)/$(SANITIZE_NAME) $(LD_FLAGS) $(SANITIZE_LD_FLAGS)
-	@echo "$(_ORANGE)[Build mode]: Sanitize$(_END)"
+	@$(ECHO_BIN) "$(_ORANGE)[Build mode]: Sanitize$(_END)"
 
 $(SANITIZE_OBJDIR)/%.o: %.cpp $(GLFW_LIB) Makefile
 	@$(ECHO) "$(_ORANGE)$<$(_END)"
