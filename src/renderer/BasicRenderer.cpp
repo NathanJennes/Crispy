@@ -79,6 +79,7 @@ BasicRenderer::Mesh &Vulkan::BasicRenderer::Mesh::operator=(Vulkan::BasicRendere
 //----
 BasicRenderer::Model::~Model()
 {
+	unload();
 }
 
 BasicRenderer::Model::Model(u32 new_id)
@@ -89,6 +90,11 @@ BasicRenderer::Model::Model(u32 new_id)
 void BasicRenderer::Model::reset_id()
 {
 	id = {};
+}
+
+void BasicRenderer::Model::unload()
+{
+	BasicRenderer::unload_model(*this);
 }
 
 //----

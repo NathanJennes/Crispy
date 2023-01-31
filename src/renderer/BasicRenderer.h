@@ -60,6 +60,7 @@ public:	// Types
 		explicit Model(u32 new_id);
 
 		void	reset_id();
+		void	unload();
 
 		//----
 		// Getters
