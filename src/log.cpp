@@ -1,5 +1,6 @@
 #include <cstdarg>
 #include <iostream>
+#include <cstring>
 #include "log.h"
 
 #define RESET   "\033[0m"
@@ -23,64 +24,36 @@
 namespace Vulkan
 {
 
-void log_debug(const char *message, ...)
+static void set_color(const char *error_level);
+
+void log_message(bool newline, const char *error_level, const char *message, ...)
 {
 	__builtin_va_list args;
 	va_start(args, message);
-	printf("%s[DEBUG]: ", BLUE);
+	if (error_level) {
+		set_color(error_level);
+		printf("%s: ", error_level);
+	}
 	vprintf(message, args);
-	printf("\n%s", RESET);
+	if (newline)
+		printf("%s\n", RESET);
 	va_end(args);
 }
 
-void log_trace(const char *message, ...)
+static void set_color(const char *error_level)
 {
-	__builtin_va_list args;
-	va_start(args, message);
-	printf("%s[TRACE]: ", WHITE);
-	vprintf(message, args);
-	printf("\n%s", RESET);
-	va_end(args);
-}
-
-void log_info(const char *message, ...)
-{
-	__builtin_va_list args;
-	va_start(args, message);
-	printf("%s[INFO]: ", GREEN);
-	vprintf(message, args);
-	printf("\n%s", RESET);
-	va_end(args);
-}
-
-void log_warn(const char *message, ...)
-{
-	__builtin_va_list args;
-	va_start(args, message);
-	printf("%s[WARN]: ", YELLOW);
-	vprintf(message, args);
-	printf("\n%s", RESET);
-	va_end(args);
-}
-
-void log_error(const char *message, ...)
-{
-	__builtin_va_list args;
-	va_start(args, message);
-	printf("%s[ERROR]: ", MAGENTA);
-	vprintf(message, args);
-	printf("\n%s", RESET);
-	va_end(args);
-}
-
-void log_fatal(const char *message, ...)
-{
-	__builtin_va_list args;
-	va_start(args, message);
-	printf("%s[FATAL]: ", RED);
-	vprintf(message, args);
-	printf("\n%s", RESET);
-	va_end(args);
+	if (strcmp(error_level, "DEBUG") == 0)
+		printf("%s", BLUE);
+	else if (strcmp(error_level, "TRACE") == 0)
+		printf("%s", WHITE);
+	else if (strcmp(error_level, "INFO") == 0)
+		printf("%s", GREEN);
+	else if (strcmp(error_level, "WARN") == 0)
+		printf("%s", YELLOW);
+	else if (strcmp(error_level, "ERROR") == 0)
+		printf("%s", RED);
+	else if (strcmp(error_level, "FATAL") == 0)
+		printf("%s", BOLDRED);
 }
 
 }
