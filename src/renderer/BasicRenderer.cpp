@@ -82,6 +82,7 @@ VkSemaphore			BasicRenderer::render_finished_semaphore = VK_NULL_HANDLE;
 VkFence				BasicRenderer::last_frame_presented_fence = VK_NULL_HANDLE;
 
 bool				BasicRenderer::frame_started = false;
+bool				BasicRenderer::frame_available = false;
 u32					BasicRenderer::current_image_index = 0;
 
 Buffer				BasicRenderer::camera_uniform_buffer;
@@ -143,7 +144,7 @@ void Vulkan::BasicRenderer::shutdown()
 
 void Vulkan::BasicRenderer::begin_frame()
 {
-	frame_started = false;
+	frame_started = true;
 	wait_for_last_frame_finished();
 
 	auto image_index = get_swapchain_image();
@@ -162,8 +163,7 @@ void Vulkan::BasicRenderer::begin_frame()
 	begin_renderpass();
 	setup_viewport();
 	setup_camera_ubo();
-
-	frame_started = true;
+	frame_available = true;
 }
 
 void Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
@@ -183,6 +183,9 @@ void
 Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
 	const glm::vec3 &pos, const glm::vec3 &rotation, const glm::vec3 &scale)
 {
+	if (!frame_available)
+		return ;
+
 	if (!frame_started) {
 		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
 		return ;
@@ -209,6 +212,13 @@ void Vulkan::BasicRenderer::end_frame()
 		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
 		return ;
 	}
+
+	if (!frame_available)
+		return ;
+
+	frame_started = false;
+	frame_available = false;
+
 	vkResetFences(VulkanInstance::logical_device(), 1, &last_frame_presented_fence);
 	end_renderpass();
 	if (!end_command_buffer())
