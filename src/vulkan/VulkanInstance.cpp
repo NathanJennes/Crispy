@@ -369,7 +369,6 @@ bool VulkanInstance::init_logical_device()
 	VkPhysicalDeviceFeatures device_features{};
 
 	std::vector<const char*> device_extensions = get_required_device_extensions();
-	IN_MACOS(device_extensions.push_back("VK_KHR_portability_subset"));
 
 	VkDeviceCreateInfo device_infos{};
 	device_infos.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -399,6 +398,7 @@ std::vector<const char *> VulkanInstance::get_required_device_extensions()
 {
 	std::vector<const char*> requirements;
 	requirements.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	IN_MACOS(requirements.push_back("VK_KHR_portability_subset"));
 	return requirements;
 }
 }
