@@ -398,6 +398,7 @@ std::vector<const char *> VulkanInstance::get_required_device_extensions()
 {
 	std::vector<const char*> requirements;
 	requirements.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	IN_MACOS(requirements.push_back("VK_KHR_portability_subset"));
 	return requirements;
 }
 }
