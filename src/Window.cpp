@@ -32,7 +32,7 @@ bool Window::initialize(const std::string &win_name, i32 x, i32 y, u32 win_width
 
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit()) {
-		CORE_ERROR("Couldn't initialize glfw")
+		CORE_ERROR("Couldn't initialize glfw");
 		return false;
 	}
 
@@ -67,10 +67,10 @@ bool Window::initialize_window(i32 x, i32 y)
 	window = glfwCreateWindow((i32)width, (i32)height, name.c_str(), nullptr, nullptr);
 	if (!window) {
 		glfwTerminate();
-		CORE_ERROR("GLFW window creation failed!")
+		CORE_ERROR("GLFW window creation failed!");
 		return false;
 	}
-	CORE_TRACE("GLFW window created")
+	CORE_TRACE("GLFW window created");
 
 	return true;
 }
@@ -98,7 +98,7 @@ bool Window::initialize_surface()
 {
 	VkResult result = glfwCreateWindowSurface(VulkanInstance::instance(), window, nullptr, &surface);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create a window surface: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't create a window surface: %s", vulkan_error_to_string(result));
 		return false;
 	}
 	return true;
@@ -108,7 +108,7 @@ void Window::error_callback(int error, const char *description)
 {
 	(void) error;
 	(void) description;
-	CORE_WARN("Glfw error: %s\nERROR CODE: %d", description, error)
+	CORE_WARN("Glfw error: %s\nERROR CODE: %d", description, error);
 }
 
 void Window::key_callback(GLFWwindow *from_window, int key, int scancode, int action, int mods)
@@ -156,7 +156,7 @@ void Window::framebuffer_size_callback(GLFWwindow *from_window, int new_width, i
 {
 	(void) from_window;
 
-	CORE_DEBUG("Window resized to %dx%d", new_width, new_height)
+	CORE_DEBUG("Window resized to %dx%d", new_width, new_height);
 	width = new_width;
 	height = new_height;
 	has_resized = true;
@@ -168,7 +168,7 @@ std::vector<const char *> Window::get_required_instance_extensions()
 	u32 count;
 	const char** extensions = glfwGetRequiredInstanceExtensions(&count);
 	if (!extensions) {
-		CORE_ERROR("Couldn't get glfw required extensions")
+		CORE_ERROR("Couldn't get glfw required extensions");
 		return {};
 	}
 

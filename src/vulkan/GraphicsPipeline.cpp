@@ -29,7 +29,7 @@ bool GraphicsPipeline::initialize()
 	auto frag_code = read_file("obj/shaders/shader.frag.spv");
 
 	if (vert_code.empty() || frag_code.empty()) {
-		CORE_ERROR("Couldn't create the graphics pipeline: couldn't load SpirV shaders!")
+		CORE_ERROR("Couldn't create the graphics pipeline: couldn't load SpirV shaders!");
 		return false;
 	}
 
@@ -37,7 +37,7 @@ bool GraphicsPipeline::initialize()
 	VkShaderModule frag_shader_module = create_shader_module(frag_code);
 
 	if (vert_shader_module == VK_NULL_HANDLE || frag_shader_module == VK_NULL_HANDLE) {
-		CORE_ERROR("Couldn't create the graphics pipeline!")
+		CORE_ERROR("Couldn't create the graphics pipeline!");
 		return false;
 	}
 
@@ -166,7 +166,7 @@ bool GraphicsPipeline::initialize()
 	pipeline_layout_create_infos.pPushConstantRanges = &push_constants;
 
 	if (vkCreatePipelineLayout(VulkanInstance::logical_device(), &pipeline_layout_create_infos, nullptr, &_pipeline_layout) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the graphics pipeline's layout!")
+		CORE_ERROR("Couldn't create the graphics pipeline's layout!");
 		vkDestroyShaderModule(VulkanInstance::logical_device(), vert_shader_module, nullptr);
 		vkDestroyShaderModule(VulkanInstance::logical_device(), frag_shader_module, nullptr);
 		return false;
@@ -191,7 +191,7 @@ bool GraphicsPipeline::initialize()
 	create_infos.basePipelineIndex = -1;
 
 	if (vkCreateGraphicsPipelines(VulkanInstance::logical_device(), VK_NULL_HANDLE, 1, &create_infos, nullptr, &_pipeline) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the graphics pipeline!")
+		CORE_ERROR("Couldn't create the graphics pipeline!");
 		vkDestroyShaderModule(VulkanInstance::logical_device(), vert_shader_module, nullptr);
 		vkDestroyShaderModule(VulkanInstance::logical_device(), frag_shader_module, nullptr);
 		return false;
@@ -212,7 +212,7 @@ VkShaderModule GraphicsPipeline::create_shader_module(const std::vector<char> &c
 
 	VkShaderModule module{};
 	if (vkCreateShaderModule(VulkanInstance::logical_device(), &create_infos, nullptr, &module) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create a shader module!")
+		CORE_ERROR("Couldn't create a shader module!");
 		return VK_NULL_HANDLE;
 	}
 	return module;
@@ -282,7 +282,7 @@ bool GraphicsPipeline::initialize_render_pass()
 	create_infos.pDependencies = &dependency;
 
 	if (vkCreateRenderPass(VulkanInstance::logical_device(), &create_infos, nullptr, &_render_pass) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the render pass!")
+		CORE_ERROR("Couldn't create the render pass!");
 		return false;
 	}
 
@@ -304,7 +304,7 @@ bool GraphicsPipeline::initialize_descriptor_sets()
 	create_infos.pBindings = &mvp_layout_binding;
 
 	if (vkCreateDescriptorSetLayout(VulkanInstance::logical_device(), &create_infos, nullptr, &_descriptor_set_layout) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the descriptor set!")
+		CORE_ERROR("Couldn't create the descriptor set!");
 		return false;
 	}
 	return true;

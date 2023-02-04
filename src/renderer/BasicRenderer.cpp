@@ -105,28 +105,28 @@ bool Vulkan::BasicRenderer::initialize()
 
 	if (!create_sync_objects())
 		return false;
-	CORE_TRACE("BasicRenderer's sync objects created")
+	CORE_TRACE("BasicRenderer's sync objects created");
 
 	create_uniform_buffer();
-	CORE_TRACE("BasicRenderer's uniform buffer created")
+	CORE_TRACE("BasicRenderer's uniform buffer created");
 
 	if (!create_descriptor_pool())
 		return false;
-	CORE_TRACE("BasicRenderer's descriptor pool created")
+	CORE_TRACE("BasicRenderer's descriptor pool created");
 
 	if (!create_camera_descriptor_set())
 		return false;
-	CORE_TRACE("BasicRenderer's descripitor set created")
+	CORE_TRACE("BasicRenderer's descripitor set created");
 
 	if (!create_command_pool())
 		return false;
-	CORE_TRACE("BasicRenderer's command pool created")
+	CORE_TRACE("BasicRenderer's command pool created");
 
 	if (!create_command_buffer())
 		return false;
-	CORE_TRACE("BasicRenderer's command buffer created")
+	CORE_TRACE("BasicRenderer's command buffer created");
 
-	CORE_TRACE("BasicRenderer fully initialized!")
+	CORE_TRACE("BasicRenderer fully initialized!");
 	return true;
 }
 
@@ -154,7 +154,7 @@ void Vulkan::BasicRenderer::begin_frame()
 
 	VkResult result = vkResetCommandBuffer(command_buffer, 0);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't reset command buffer of BasicRenderer: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't reset command buffer of BasicRenderer: %s", vulkan_error_to_string(result));
 		return;
 	}
 
@@ -187,7 +187,7 @@ Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
 		return ;
 
 	if (!frame_started) {
-		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started")
+		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
 		return ;
 	}
 	VkDeviceSize offsets[] = {0};
@@ -209,7 +209,7 @@ Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
 void Vulkan::BasicRenderer::end_frame()
 {
 	if (!frame_started) {
-		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started")
+		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
 		return ;
 	}
 
@@ -240,7 +240,7 @@ bool Vulkan::BasicRenderer::create_sync_objects()
 	if (vkCreateSemaphore(VulkanInstance::logical_device(), &semaphore_infos, nullptr, &image_available_semaphore) != VK_SUCCESS ||
 		vkCreateSemaphore(VulkanInstance::logical_device(), &semaphore_infos, nullptr, &render_finished_semaphore) != VK_SUCCESS ||
 		vkCreateFence(VulkanInstance::logical_device(), &fence_infos, nullptr, &last_frame_presented_fence) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create BasicRenderer's sync objects!")
+		CORE_ERROR("Couldn't create BasicRenderer's sync objects!");
 		return false;
 	}
 	return true;
@@ -259,7 +259,7 @@ bool Vulkan::BasicRenderer::create_descriptor_pool()
 	create_infos.maxSets = 1;
 
 	if (vkCreateDescriptorPool(VulkanInstance::logical_device(), &create_infos, nullptr, &descriptor_pool) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create BasicRenderer's descriptor pool")
+		CORE_ERROR("Couldn't create BasicRenderer's descriptor pool");
 		return false;
 	}
 	return true;
@@ -276,7 +276,7 @@ bool Vulkan::BasicRenderer::create_camera_descriptor_set()
 
 	VkResult result = vkAllocateDescriptorSets(VulkanInstance::logical_device(), &alloc_infos, &camera_descriptor_set);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create BasicRenderer's descriptor sets: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't create BasicRenderer's descriptor sets: %s", vulkan_error_to_string(result));
 		return false;
 	}
 
@@ -340,11 +340,12 @@ std::optional<u32> BasicRenderer::get_swapchain_image()
 		VkSemaphoreCreateInfo semaphore_infos{};
 		semaphore_infos.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		result = vkCreateSemaphore(VulkanInstance::logical_device(), &semaphore_infos, nullptr, &image_available_semaphore);
-		if (result != VK_SUCCESS)
-			CORE_ERROR("Couldn't recreate image_available_semaphore in BasicRenderer: %s", vulkan_error_to_string(result))
+		if (result != VK_SUCCESS) {
+			CORE_ERROR("Couldn't recreate image_available_semaphore in BasicRenderer: %s", vulkan_error_to_string(result));
+		}
 		return {};
 	} else if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't acquire BasicRenderer's next swapchain image for rendering: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't acquire BasicRenderer's next swapchain image for rendering: %s", vulkan_error_to_string(result));
 		return {};
 	}
 
@@ -362,7 +363,7 @@ bool BasicRenderer::create_command_pool()
 
 	VkResult result = vkCreateCommandPool(VulkanInstance::logical_device(), &pool_create_infos, nullptr, &command_pool);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create BasicRenderer's command pool: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't create BasicRenderer's command pool: %s", vulkan_error_to_string(result));
 		return false;
 	}
 
@@ -378,7 +379,7 @@ bool BasicRenderer::create_command_buffer()
 
 	VkResult  result = vkAllocateCommandBuffers(VulkanInstance::logical_device(), &alloc_infos, &command_buffer);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create BasicRenderer's command buffer: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't create BasicRenderer's command buffer: %s", vulkan_error_to_string(result));
 		return false;
 	}
 
@@ -394,7 +395,7 @@ bool BasicRenderer::begin_command_buffer()
 
 	VkResult result = vkBeginCommandBuffer(command_buffer, &begin_infos);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't begin BasicRenderer's command buffer: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't begin BasicRenderer's command buffer: %s", vulkan_error_to_string(result));
 		return false;
 	}
 	return true;
@@ -446,7 +447,7 @@ bool BasicRenderer::end_command_buffer()
 {
 	VkResult result = vkEndCommandBuffer(command_buffer);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't end BasicRenderer's command buffer: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't end BasicRenderer's command buffer: %s", vulkan_error_to_string(result));
 		return false;
 	}
 	return true;
@@ -467,7 +468,7 @@ bool BasicRenderer::submit_command_buffer()
 
 	VkResult result = vkQueueSubmit(VulkanInstance::graphics_queue(), 1, &submit_infos, last_frame_presented_fence);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't submit BasicRenderer's draw command buffer: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't submit BasicRenderer's draw command buffer: %s", vulkan_error_to_string(result));
 		return false;
 	}
 	return true;
@@ -490,7 +491,7 @@ bool BasicRenderer::present_frame()
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || Window::did_resize()) {
 		SwapchainManager::recreate();
 	} else if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't present BasicRenderer's swap chain image: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't present BasicRenderer's swap chain image: %s", vulkan_error_to_string(result));
 		return false;
 	}
 	return true;

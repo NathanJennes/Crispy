@@ -49,11 +49,11 @@ bool SwapchainManager::recreate()
 	cleanup_swapchain();
 
 	if (!create_swapchain()) {
-		CORE_ERROR("Couldn't to recreate the swapchain")
+		CORE_ERROR("Couldn't to recreate the swapchain");
 		return false;
 	}
 	if (!create_framebuffers()) {
-		CORE_ERROR("Couldn't to recreate the swapchain")
+		CORE_ERROR("Couldn't to recreate the swapchain");
 		return false;
 	}
 	return true;
@@ -88,7 +88,7 @@ VkSurfaceFormatKHR SwapchainManager::choose_surface_format(const std::vector<VkS
 {
 #ifdef DEBUG
 	if (available_formats.empty()) {
-		CORE_ERROR("Available format list is empty... Something has gone very wrong...")
+		CORE_ERROR("Available format list is empty... Something has gone very wrong...");
 		return VkSurfaceFormatKHR{};
 	}
 #endif
@@ -99,7 +99,7 @@ VkSurfaceFormatKHR SwapchainManager::choose_surface_format(const std::vector<VkS
 		}
 	}
 
-	CORE_DEBUG("Couldn't use the preferred image format for the swapchain")
+	CORE_DEBUG("Couldn't use the preferred image format for the swapchain");
 	return available_formats[0];
 }
 
@@ -110,7 +110,7 @@ VkPresentModeKHR SwapchainManager::choose_present_mode(const std::vector<VkPrese
 			return mode;
 	}
 
-	CORE_DEBUG("Couldn't use the preferred present mode for the swapchain")
+	CORE_DEBUG("Couldn't use the preferred present mode for the swapchain");
 	// The only guaranteed mode to be present
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
@@ -151,7 +151,7 @@ void SwapchainManager::create_image_views()
 		create_infos.subresourceRange.levelCount = 1;
 
 		if (vkCreateImageView(VulkanInstance::logical_device(), &create_infos, nullptr, &_swapchain_image_views[i]) != VK_SUCCESS) {
-			CORE_ERROR("Couldn't create a swapchain image view!")
+			CORE_ERROR("Couldn't create a swapchain image view!");
 			return ;
 		}
 	}
@@ -174,7 +174,7 @@ bool SwapchainManager::create_framebuffers()
 		create_infos.layers = 1;
 
 		if (vkCreateFramebuffer(VulkanInstance::logical_device(), &create_infos, nullptr, &swapchain_framebuffers()[i]) != VK_SUCCESS) {
-			CORE_DEBUG("Couldn't create a framebuffer!")
+			CORE_DEBUG("Couldn't create a framebuffer!");
 			return false;
 		}
 	}
@@ -239,7 +239,7 @@ bool SwapchainManager::create_swapchain()
 	create_infos.oldSwapchain = VK_NULL_HANDLE;
 
 	if (vkCreateSwapchainKHR(VulkanInstance::logical_device(), &create_infos, nullptr, &_swapchain) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create a swapchain!")
+		CORE_ERROR("Couldn't create a swapchain!");
 		return false;
 	}
 
@@ -266,7 +266,7 @@ VkFormat SwapchainManager::choose_supported_format(const std::vector<VkFormat> &
 			return format;
 		}
 	}
-	CORE_ERROR("Couldn't find supported format")
+	CORE_ERROR("Couldn't find supported format");
 	return VK_FORMAT_R32_UINT;
 }
 
@@ -290,7 +290,7 @@ void SwapchainManager::create_depth_resources()
 	if (!create_image(_swapchain_extent.width, _swapchain_extent.height, depth_format,
 		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depth_image, &depth_image_memory)) {
-		CORE_ERROR("Couldn't create depth image for the swapchain")
+		CORE_ERROR("Couldn't create depth image for the swapchain");
 		return ;
 	}
 
@@ -310,8 +310,9 @@ void SwapchainManager::create_depth_resources()
 	create_infos.subresourceRange.levelCount = 1;
 
 	VkResult result = vkCreateImageView(VulkanInstance::logical_device(), &create_infos, nullptr, &depth_image_view);
-	if (result != VK_SUCCESS)
-		CORE_ERROR("Couldn't create the depth image view for the swapchain")
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create the depth image view for the swapchain");
+	}
 }
 
 bool
@@ -335,7 +336,7 @@ SwapchainManager::create_image(u32 width, u32 height, VkFormat format, VkImageTi
 
 	VkResult result = vkCreateImage(VulkanInstance::logical_device(), &image_info, nullptr, out_image);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create an image: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't create an image: %s", vulkan_error_to_string(result));
 		return false;
 	}
 
@@ -343,7 +344,7 @@ SwapchainManager::create_image(u32 width, u32 height, VkFormat format, VkImageTi
 	vkGetImageMemoryRequirements(VulkanInstance::logical_device(), *out_image, &mem_requirements);
 	auto memory_type = find_memory_type(mem_requirements.memoryTypeBits, memory_property);
 	if (!memory_type.has_value()) {
-		CORE_ERROR("Couldn't find memory type for image allocation")
+		CORE_ERROR("Couldn't find memory type for image allocation");
 		return false;
 	}
 
@@ -354,13 +355,13 @@ SwapchainManager::create_image(u32 width, u32 height, VkFormat format, VkImageTi
 
 	result = vkAllocateMemory(VulkanInstance::logical_device(), &allocInfo, nullptr, out_image_memory);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't allocate memory for image: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't allocate memory for image: %s", vulkan_error_to_string(result));
 		return false;
 	}
 
 	result = vkBindImageMemory(VulkanInstance::logical_device(), *out_image, *out_image_memory, 0);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't bind memory for image: %s", vulkan_error_to_string(result))
+		CORE_ERROR("Couldn't bind memory for image: %s", vulkan_error_to_string(result));
 		return false;
 	}
 	return true;

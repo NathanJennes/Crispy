@@ -31,7 +31,7 @@ std::vector<char> read_file(const std::string& file_name)
 {
 	std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 	if (!file.is_open()) {
-		CORE_WARN("Couldn't read file [%s]", file_name.c_str())
+		CORE_WARN("Couldn't read file [%s]", file_name.c_str());
 		return {};
 	}
 
