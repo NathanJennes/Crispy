@@ -13,6 +13,7 @@
 #include "Window.h"
 #include "SwapchainManager.h"
 #include "core/crispy_core.h"
+#include "vulkan_errors.h"
 
 namespace Vulkan {
 
@@ -22,6 +23,10 @@ VkPhysicalDevice			VulkanInstance::_physical_device;
 VkDevice					VulkanInstance::_logical_device;
 VkQueue						VulkanInstance::_graphics_queue;
 VkQueue						VulkanInstance::_present_queue;
+
+VkFence						VulkanInstance::immediate_fence = VK_NULL_HANDLE;
+VkCommandPool				VulkanInstance::immediate_command_pool = VK_NULL_HANDLE;
+VkCommandBuffer				VulkanInstance::immediate_command_buffer = VK_NULL_HANDLE;
 
 bool VulkanInstance::initialize()
 {
@@ -46,6 +51,10 @@ bool VulkanInstance::initialize()
 	if (!init_logical_device())
 		return false;
 	CORE_TRACE("Logical device initialized!");
+
+	if (!create_immediate_objects())
+		return false;
+	CORE_TRACE("Vulkan Instance's immediate objects created");
 
 	return true;
 }
@@ -163,6 +172,7 @@ bool VulkanInstance::supports_validation_layer(const std::vector<const char *> &
 
 void VulkanInstance::shutdown()
 {
+	destroy_immediate_objects();
 	vkDestroyDevice(logical_device(), nullptr);
 	Window::destroy_surface();
 	IN_DEBUG(destroy_debug_messenger());
@@ -400,5 +410,90 @@ std::vector<const char *> VulkanInstance::get_required_device_extensions()
 	requirements.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	IN_MACOS(requirements.push_back("VK_KHR_portability_subset"));
 	return requirements;
+}
+
+bool VulkanInstance::create_immediate_objects()
+{
+	QueueFamilyIndices queue_indices = get_queues_for_device(physical_device());
+
+	VkCommandPoolCreateInfo pool_create_infos{};
+	pool_create_infos.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	pool_create_infos.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	pool_create_infos.queueFamilyIndex = queue_indices.graphics_index.value();
+
+	VkResult result = vkCreateCommandPool(logical_device(), &pool_create_infos, nullptr, &immediate_command_pool);
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create VulkanInstance's immediate command pool: %s", vulkan_error_to_string(result));
+		return false;
+	}
+
+	VkCommandBufferAllocateInfo alloc_infos{};
+	alloc_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	alloc_infos.commandPool = immediate_command_pool;
+	alloc_infos.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	alloc_infos.commandBufferCount = 1;
+
+	result = vkAllocateCommandBuffers(logical_device(), &alloc_infos, &immediate_command_buffer);
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
+		return false;
+	}
+
+	VkFenceCreateInfo fence_infos{};
+	fence_infos.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fence_infos.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	result = vkCreateFence(logical_device(), &fence_infos, nullptr, &immediate_fence);
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't create VulkanInstance's immediate fence!");
+		return false;
+	}
+
+	return true;
+}
+
+void VulkanInstance::destroy_immediate_objects()
+{
+	if (immediate_command_pool != VK_NULL_HANDLE)
+		vkDestroyCommandPool(logical_device(), immediate_command_pool, nullptr);
+	if (immediate_fence != VK_NULL_HANDLE)
+		vkDestroyFence(logical_device(), immediate_fence, nullptr);
+}
+
+void VulkanInstance::immediate_submit(std::function<void(VkCommandBuffer cmd_buffer)>&& function)
+{
+	VkCommandBufferBeginInfo begin_infos{};
+	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	begin_infos.flags = 0;
+	begin_infos.pInheritanceInfo = nullptr;
+
+	VkResult result = vkBeginCommandBuffer(immediate_command_buffer, &begin_infos);
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't begin BasicRenderer's command buffer: %s", vulkan_error_to_string(result));
+		return ;
+	}
+
+	function(immediate_command_buffer);
+
+	result = vkEndCommandBuffer(immediate_command_buffer);
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't end command buffer: %s", vulkan_error_to_string(result));
+		return ;
+	}
+
+	VkSubmitInfo submit_infos{};
+	submit_infos.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_infos.pCommandBuffers = &immediate_command_buffer;
+
+
+	result = vkQueueSubmit(graphics_queue(), 1, &submit_infos, immediate_fence);
+	if (result != VK_SUCCESS) {
+		CORE_ERROR("Couldn't submit VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
+		return ;
+	}
+
+	vkWaitForFences(logical_device(), 1, &immediate_fence, VK_TRUE, std::numeric_limits<u64>::max());
+	vkResetFences(logical_device(), 1, &immediate_fence);
+	vkResetCommandPool(logical_device(), immediate_command_pool, 0);
 }
 }

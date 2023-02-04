@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <optional>
+#include <functional>
 #include "defines.h"
 
 namespace Vulkan {
@@ -44,11 +45,18 @@ public:
 
 	static QueueFamilyIndices	get_queues_for_device(VkPhysicalDevice device);
 
+	//----
+	// Immediate invocations
+	//----
+	static void	immediate_submit(std::function<void(VkCommandBuffer cmd_buffer)>&& function);
+
 private:	// Methods
 	//----
 	// Initialization
 	//----
 	static bool	init_instance();
+	static bool create_immediate_objects();
+	static void destroy_immediate_objects();
 
 	//---
 	// Physical Device management
@@ -90,6 +98,13 @@ private:	// Members
 	static VkDevice					_logical_device;
 	static VkQueue					_graphics_queue;
 	static VkQueue					_present_queue;
+
+	//----
+	// Immediate invocation
+	//----
+	static VkFence			immediate_fence;
+	static VkCommandPool	immediate_command_pool;
+	static VkCommandBuffer	immediate_command_buffer;
 
 };
 
