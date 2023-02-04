@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 #include "defines.h"
 #include "log.h"
 
@@ -24,7 +25,6 @@ public:
 	Buffer();
 	Buffer(const Buffer& other);
 	Buffer(Buffer&& other) noexcept;
-	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties);
 	~Buffer();
 
 	Buffer& operator=(const Buffer& other);
@@ -41,14 +41,14 @@ public:
 	{
 #ifdef DEBUG
 		u32 mem_requirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		if ((memory_properties() & mem_requirements) != mem_requirements) {
+		if ((memory_properties & mem_requirements) != mem_requirements) {
 			CORE_ERROR("Buffer::set_data(): the buffer memory is not coherent and visible by the host!");
 			return ;
 		}
 
-		if (size() < offset + vector.size() * sizeof(T)) {
+		if (size < offset + vector.size() * sizeof(T)) {
 			CORE_ERROR("Buffer::set_data(): The buffer is not large enough to copy this data!");
-			CORE_ERROR("Buffer::set_data(): size(): %lu, offset: %lu, byte_count: %lu", size(), offset, vector.size() * sizeof(T));
+			CORE_ERROR("Buffer::set_data(): size(): %lu, offset: %lu, byte_count: %lu", size, offset, vector.size() * sizeof(T));
 			return ;
 		}
 #endif
@@ -58,47 +58,51 @@ public:
 	//----
 	// Getters
 	//----
-	const VkBuffer&					buffer()			const	{ return _buffer; }
-	const VkDeviceSize&				size()				const	{ return _size; }
-	const VkBufferUsageFlags&		usage()				const	{ return _usage; }
-	const VkMemoryPropertyFlags&	memory_properties()	const	{ return _memory_properties; }
+	[[nodiscard]] const VkBuffer&				get_buffer()			const	{ return buffer; }
+	[[nodiscard]] const VkDeviceSize&			get_size()				const	{ return size; }
+	[[nodiscard]] const VkBufferUsageFlags&		get_usage()				const	{ return usage; }
+	[[nodiscard]] const VkMemoryPropertyFlags&	get_memory_properties()	const	{ return memory_properties; }
 
 private:	// Methods
 
+	//----
+	// Initialization
+	//----
+	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties);
 	void	initialize();
-	void	shutdown();
-
 	void	create_buffer();
 	void	allocate_buffer();
-	void	create_command_pool();
-	void	create_command_buffer();
-	void	create_fence();
-	void	record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const;
-	void	submit_command_buffer() const;
-
-	std::optional<u32>	find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties) const;
 
 	//----
-	// Getters
+	// Shutdown
 	//----
-	const VkDeviceMemory&			memory()			const	{ return _memory; }
-	const VkCommandPool&			command_pool()		const	{ return _command_pool; }
-	const VkCommandBuffer&			command_buffer()	const	{ return _command_buffer; }
-	const VkFence&					copy_fence()		const	{ return _copy_fence; }
-	void							*mapped_memory()	const	{ return _mapped_memory; }
+	void	shutdown();
+
+	//----
+	// Memory transfer back-end
+	//----
+	void	copy_to_impl(VkBuffer dst_buffer, u32 dst_offset, u32 bytes_to_copy, u32 src_offset) const;
+
+	//----
+	// Helpers
+	//----
+	[[nodiscard]] std::optional<u32>	find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties) const;
 
 private:	// Members
-	VkBuffer				_buffer;
-	VkDeviceSize			_size;
-	VkBufferUsageFlags		_usage;
-	VkMemoryPropertyFlags	_memory_properties;
-	VkDeviceMemory			_memory;
+	//----
+	// Buffer infos & handles
+	//----
+	VkBuffer				buffer;
+	VkDeviceSize			size;
+	VkBufferUsageFlags		usage;
+	VkMemoryPropertyFlags	memory_properties;
+	VkDeviceMemory			memory;
+	void					*mapped_memory;
 
-	VkCommandPool			_command_pool;
-	VkCommandBuffer			_command_buffer;
-	VkFence					_copy_fence;
-
-	void					*_mapped_memory;
+	//----
+	// Buffer references management
+	//----
+	static std::unordered_map<VkBuffer, u64>	buffer_references;
 };
 
 } // Vulkan
