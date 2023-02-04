@@ -70,11 +70,10 @@ private:	// Methods
 
 	void	create_buffer();
 	void	allocate_buffer();
-	void	create_command_pool();
-	void	create_command_buffer();
-	void	create_fence();
-	void	record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const;
-	void	submit_command_buffer() const;
+
+	//----
+	// Memory transfer back-end
+	void	copy_to_impl(VkBuffer dst_buffer, u32 dst_offset, u32 bytes_to_copy, u32 src_offset) const;
 
 	std::optional<u32>	find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties) const;
 
@@ -82,9 +81,6 @@ private:	// Methods
 	// Getters
 	//----
 	const VkDeviceMemory&			memory()			const	{ return _memory; }
-	const VkCommandPool&			command_pool()		const	{ return _command_pool; }
-	const VkCommandBuffer&			command_buffer()	const	{ return _command_buffer; }
-	const VkFence&					copy_fence()		const	{ return _copy_fence; }
 	void							*mapped_memory()	const	{ return _mapped_memory; }
 
 private:	// Members
@@ -93,10 +89,6 @@ private:	// Members
 	VkBufferUsageFlags		_usage;
 	VkMemoryPropertyFlags	_memory_properties;
 	VkDeviceMemory			_memory;
-
-	VkCommandPool			_command_pool;
-	VkCommandBuffer			_command_buffer;
-	VkFence					_copy_fence;
 
 	void					*_mapped_memory;
 };

@@ -2,7 +2,6 @@
 // Created by nathan on 1/15/23.
 //
 
-#include <limits>
 #include <cstring>
 #include "Buffer.h"
 #include "VulkanInstance.h"
@@ -10,37 +9,30 @@
 
 namespace Vulkan {
 Buffer::Buffer()
-	: _buffer(VK_NULL_HANDLE), _size(0), _usage(0), _memory_properties(0), _memory(VK_NULL_HANDLE),
-	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
+	: _buffer(VK_NULL_HANDLE), _size(0), _usage(0), _memory_properties(0), _memory(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 }
 
 Buffer::Buffer(const Buffer &other)
-	: _buffer(VK_NULL_HANDLE), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(VK_NULL_HANDLE),
-	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
+	: _buffer(VK_NULL_HANDLE), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 	initialize();
 	other.copy_to(*this);
 }
 
 Buffer::Buffer(Buffer &&other) noexcept
-	: _buffer(other.buffer()), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(other.memory()),
-	_command_pool(other.command_pool()), _command_buffer(other.command_buffer()), _copy_fence(other.copy_fence()), _mapped_memory(other.mapped_memory())
+	: _buffer(other.buffer()), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(other.memory()), _mapped_memory(other.mapped_memory())
 {
 	other._buffer = VK_NULL_HANDLE;
 	other._size = 0;
 	other._usage = 0;
 	other._memory_properties = 0;
 	other._memory = VK_NULL_HANDLE;
-	other._command_pool = VK_NULL_HANDLE;
-	other._command_buffer = VK_NULL_HANDLE;
-	other._copy_fence = VK_NULL_HANDLE;
 	other._mapped_memory = nullptr;
 }
 
 Buffer::Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties)
-	: _buffer(VK_NULL_HANDLE), _size(size), _usage(usage), _memory_properties(mem_properties), _memory(VK_NULL_HANDLE),
-	_command_pool(VK_NULL_HANDLE), _command_buffer(VK_NULL_HANDLE), _copy_fence(VK_NULL_HANDLE), _mapped_memory(nullptr)
+	: _buffer(VK_NULL_HANDLE), _size(size), _usage(usage), _memory_properties(mem_properties), _memory(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 	if (size > 0)
 		initialize();
@@ -83,9 +75,6 @@ Buffer &Buffer::operator=(Buffer &&other) noexcept
 	_usage = other.usage();
 	_memory_properties = other.memory_properties();
 	_memory = other.memory();
-	_copy_fence = other.copy_fence();
-	_command_buffer = other.command_buffer();
-	_command_pool = other.command_pool();
 	_mapped_memory = other.mapped_memory();
 
 	other._buffer = VK_NULL_HANDLE;
@@ -93,9 +82,6 @@ Buffer &Buffer::operator=(Buffer &&other) noexcept
 	other._usage = 0;
 	other._memory_properties = 0;
 	other._memory = VK_NULL_HANDLE;
-	other._copy_fence = VK_NULL_HANDLE;
-	other._command_buffer = VK_NULL_HANDLE;
-	other._command_pool = VK_NULL_HANDLE;
 	other._mapped_memory = nullptr;
 
 	return *this;
@@ -108,31 +94,10 @@ void Buffer::initialize()
 		if (buffer() != VK_NULL_HANDLE)
 			allocate_buffer();
 	}
-
-	// TODO: no need to create command buffers pools and fences for buffers that wont be copied to other buffers
-	create_command_pool();
-	if (command_pool() != VK_NULL_HANDLE)
-		create_command_buffer();
-
-	create_fence();
 }
 
 void Buffer::shutdown()
 {
-	if (copy_fence() != VK_NULL_HANDLE) {
-		vkDestroyFence(VulkanInstance::logical_device(), copy_fence(), nullptr);
-		_copy_fence = VK_NULL_HANDLE;
-	}
-	if (command_buffer() != VK_NULL_HANDLE) {
-		vkFreeCommandBuffers(VulkanInstance::logical_device(), command_pool(), 1, &_command_buffer);
-		_command_buffer = VK_NULL_HANDLE;
-	}
-
-	if (command_pool() != VK_NULL_HANDLE) {
-		vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool(), nullptr);
-		_command_pool = VK_NULL_HANDLE;
-	}
-
 	if (mapped_memory() != nullptr) {
 		vkUnmapMemory(VulkanInstance::logical_device(), memory());
 		_mapped_memory = nullptr;
@@ -202,74 +167,15 @@ std::optional<u32> Buffer::find_memory_type(u32 type_filter, VkMemoryPropertyFla
 	return {};
 }
 
-void Buffer::create_command_pool()
+void Buffer::copy_to_impl(VkBuffer dst_buffer, u32 dst_offset, u32 bytes_to_copy, u32 src_offset) const
 {
-	QueueFamilyIndices queue_indices = VulkanInstance::get_queues_for_device(VulkanInstance::physical_device());
-
-	VkCommandPoolCreateInfo pool_create_infos{};
-	pool_create_infos.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	pool_create_infos.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	pool_create_infos.queueFamilyIndex = queue_indices.graphics_index.value();
-
-	if (vkCreateCommandPool(VulkanInstance::logical_device(), &pool_create_infos, nullptr, &_command_pool) != VK_SUCCESS) {
-		TODO_PROPAGATE_ERRORS
-		CORE_ERROR("Couldn't create a command pool for a Buffer!");
-	}
-}
-
-void Buffer::create_command_buffer()
-{
-	VkCommandBufferAllocateInfo alloc_infos{};
-	alloc_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	alloc_infos.commandPool = command_pool();
-	alloc_infos.commandBufferCount = 1;
-	alloc_infos.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(VulkanInstance::logical_device(), &alloc_infos, &_command_buffer) != VK_SUCCESS) {
-		TODO_PROPAGATE_ERRORS
-		CORE_ERROR("Couldn't create the command buffer for a Buffer!");
-		return ;
-	}
-}
-
-void Buffer::create_fence()
-{
-	VkFenceCreateInfo create_infos{};
-	create_infos.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	if (vkCreateFence(VulkanInstance::logical_device(), &create_infos, nullptr, &_copy_fence) != VK_SUCCESS) {
-		TODO_PROPAGATE_ERRORS
-		CORE_ERROR("Couldn't create a fence for a Buffer!");
-	}
-}
-
-void Buffer::record_command_buffer(VkBuffer dst_buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const
-{
-	VkCommandBufferBeginInfo begin_infos{};
-	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_infos.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	vkBeginCommandBuffer(command_buffer(), &begin_infos);
-
-	VkBufferCopy copy_region{};
-	copy_region.srcOffset = src_offset;
-	copy_region.size = size_to_copy;
-	copy_region.dstOffset = dst_offset;
-	vkCmdCopyBuffer(command_buffer(), buffer(), dst_buffer, 1, &copy_region);
-
-	if (vkEndCommandBuffer(command_buffer()) != VK_SUCCESS) {
-		TODO_PROPAGATE_ERRORS
-		CORE_ERROR("Couldn't record command buffer for a Buffer!");
-	}
-}
-
-void Buffer::submit_command_buffer() const
-{
-	VkSubmitInfo submit_infos{};
-	submit_infos.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_infos.commandBufferCount = 1;
-	submit_infos.pCommandBuffers = &_command_buffer;
-	vkQueueSubmit(VulkanInstance::graphics_queue(), 1, &submit_infos, copy_fence());
-	vkWaitForFences(VulkanInstance::logical_device(), 1, &_copy_fence, VK_TRUE, std::numeric_limits<u64>::max());
-	vkResetFences(VulkanInstance::logical_device(), 1, &_copy_fence);
+	VulkanInstance::immediate_submit([&](VkCommandBuffer cmd_buffer) {
+		VkBufferCopy copy_region{};
+		copy_region.srcOffset = src_offset;
+		copy_region.dstOffset = dst_offset;
+		copy_region.size = bytes_to_copy;
+		vkCmdCopyBuffer(cmd_buffer, _buffer, dst_buffer, 1, &copy_region);
+	});
 }
 
 void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32 src_offset) const
@@ -297,8 +203,7 @@ void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32
 	}
 
 #endif
-	record_command_buffer(buffer.buffer(), dst_offset, size_to_copy, src_offset);
-	submit_command_buffer();
+	copy_to_impl(buffer._buffer, dst_offset, size_to_copy, src_offset);
 }
 
 void Buffer::copy_to(const Buffer &buffer, u32 dst_offset) const
@@ -321,8 +226,7 @@ void Buffer::copy_to(const Buffer &buffer, u32 dst_offset) const
 	}
 
 #endif
-	record_command_buffer(buffer.buffer(), dst_offset, size(), 0);
-	submit_command_buffer();
+	copy_to_impl(buffer._buffer, dst_offset, _size, 0);
 }
 
 void Buffer::set_data(const void *src_data, size_t byte_count, u32 offset)
