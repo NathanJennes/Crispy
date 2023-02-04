@@ -107,6 +107,12 @@ void Buffer::initialize()
 void Buffer::shutdown()
 {
 	if (buffer != VK_NULL_HANDLE) {
+#ifdef DEBUG
+		if (buffer_references.find(buffer) == buffer_references.end()) {
+			CORE_ERROR("Trying to remove reference count from a buffer that wasn't reference counted");
+			return ;
+		}
+#endif
 		buffer_references[buffer]--;
 		if (buffer_references.at(buffer) == 0) {
 			if (mapped_memory != nullptr)
