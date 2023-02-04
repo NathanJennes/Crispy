@@ -8,20 +8,25 @@
 #include "log.h"
 
 namespace Vulkan {
+
+std::unordered_map<VkBuffer, u64>	Buffer::buffer_references;
+
 Buffer::Buffer()
 	: _buffer(VK_NULL_HANDLE), _size(0), _usage(0), _memory_properties(0), _memory(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
 }
 
 Buffer::Buffer(const Buffer &other)
-	: _buffer(VK_NULL_HANDLE), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(VK_NULL_HANDLE), _mapped_memory(nullptr)
+	: _buffer(other.buffer()), _size(other.size()), _usage(other.usage()),
+	_memory_properties(other.memory_properties()), _memory(other.memory()), _mapped_memory(other.mapped_memory())
 {
-	initialize();
-	other.copy_to(*this);
+	if (buffer() != VK_NULL_HANDLE)
+		buffer_references[buffer()]++;
 }
 
 Buffer::Buffer(Buffer &&other) noexcept
-	: _buffer(other.buffer()), _size(other.size()), _usage(other.usage()), _memory_properties(other.memory_properties()), _memory(other.memory()), _mapped_memory(other.mapped_memory())
+	: _buffer(other.buffer()), _size(other.size()), _usage(other.usage()),
+	_memory_properties(other.memory_properties()), _memory(other.memory()), _mapped_memory(other.mapped_memory())
 {
 	other._buffer = VK_NULL_HANDLE;
 	other._size = 0;
@@ -34,9 +39,11 @@ Buffer::Buffer(Buffer &&other) noexcept
 Buffer::Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties)
 	: _buffer(VK_NULL_HANDLE), _size(size), _usage(usage), _memory_properties(mem_properties), _memory(VK_NULL_HANDLE), _mapped_memory(nullptr)
 {
-	if (size > 0)
+	if (size > 0) {
 		initialize();
-	else {
+		if (buffer() != VK_NULL_HANDLE)
+			buffer_references[buffer()]++;
+	} else {
 		CORE_WARN("Trying to create a Buffer with size 0!");
 	}
 }
@@ -53,12 +60,15 @@ Buffer &Buffer::operator=(const Buffer &other)
 
 	shutdown();
 
+	_buffer = other.buffer();
 	_size = other.size();
 	_usage = other.usage();
 	_memory_properties = other.memory_properties();
+	_memory = other.memory();
+	_mapped_memory = other.mapped_memory();
 
-	initialize();
-	other.copy_to(*this);
+	if (buffer() != VK_NULL_HANDLE)
+		buffer_references[buffer()]++;
 
 	return *this;
 }
@@ -98,18 +108,20 @@ void Buffer::initialize()
 
 void Buffer::shutdown()
 {
-	if (mapped_memory() != nullptr) {
-		vkUnmapMemory(VulkanInstance::logical_device(), memory());
-		_mapped_memory = nullptr;
-	}
-	if (memory() != VK_NULL_HANDLE) {
-		vkFreeMemory(VulkanInstance::logical_device(), memory(), nullptr);
-		_memory = VK_NULL_HANDLE;
-	}
 	if (buffer() != VK_NULL_HANDLE) {
-		vkDestroyBuffer(VulkanInstance::logical_device(), buffer(), nullptr);
-		_buffer = VK_NULL_HANDLE;
+		buffer_references[buffer()]--;
+		if (buffer_references.at(buffer()) == 0) {
+			if (mapped_memory() != nullptr)
+				vkUnmapMemory(VulkanInstance::logical_device(), memory());
+			if (memory() != VK_NULL_HANDLE)
+				vkFreeMemory(VulkanInstance::logical_device(), memory(), nullptr);
+			vkDestroyBuffer(VulkanInstance::logical_device(), buffer(), nullptr);
+			buffer_references.erase(buffer());
+		}
 	}
+	_buffer = VK_NULL_HANDLE;
+	_memory = VK_NULL_HANDLE;
+	_mapped_memory = nullptr;
 }
 
 void Buffer::create_buffer()

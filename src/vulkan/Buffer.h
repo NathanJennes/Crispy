@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 #include "defines.h"
 #include "log.h"
 
@@ -24,7 +25,6 @@ public:
 	Buffer();
 	Buffer(const Buffer& other);
 	Buffer(Buffer&& other) noexcept;
-	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties);
 	~Buffer();
 
 	Buffer& operator=(const Buffer& other);
@@ -64,6 +64,7 @@ public:
 	const VkMemoryPropertyFlags&	memory_properties()	const	{ return _memory_properties; }
 
 private:	// Methods
+	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_properties);
 
 	void	initialize();
 	void	shutdown();
@@ -91,6 +92,11 @@ private:	// Members
 	VkDeviceMemory			_memory;
 
 	void					*_mapped_memory;
+
+	//----
+	// Buffer references management
+	//----
+	static std::unordered_map<VkBuffer, u64>	buffer_references;
 };
 
 } // Vulkan
