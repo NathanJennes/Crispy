@@ -8,6 +8,7 @@
 #include "VulkanInstance.h"
 #include "SwapchainManager.h"
 #include "renderer/Renderer.h"
+#include "renderer/Vertex.h"
 
 namespace Vulkan {
 

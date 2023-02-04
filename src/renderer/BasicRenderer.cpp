@@ -153,6 +153,7 @@ VkFence				BasicRenderer::last_frame_presented_fence = VK_NULL_HANDLE;
 
 bool				BasicRenderer::alive = false;
 bool				BasicRenderer::frame_started = false;
+bool				BasicRenderer::frame_available = false;
 u32					BasicRenderer::current_image_index = 0;
 
 Buffer				BasicRenderer::camera_uniform_buffer;
@@ -241,7 +242,7 @@ void BasicRenderer::begin_frame()
 		return ;
 	}
 
-	frame_started = false;
+	frame_started = true;
 	wait_for_last_frame_finished();
 
 	auto image_index = get_swapchain_image();
@@ -260,8 +261,7 @@ void BasicRenderer::begin_frame()
 	begin_renderpass();
 	setup_viewport();
 	setup_camera_ubo();
-
-	frame_started = true;
+	frame_available = true;
 }
 
 void BasicRenderer::draw(const BasicRenderer::Model &model,
@@ -284,6 +284,9 @@ void BasicRenderer::draw(const BasicRenderer::Model &model,
 		return ;
 	}
 
+	if (!frame_available)
+		return ;
+
 	if (!frame_started) {
 		CORE_WARN("Trying to draw() with BasicRenderer but the frame wasn't started");
 		return ;
@@ -298,8 +301,8 @@ void BasicRenderer::draw(const BasicRenderer::Model &model,
 
 	for (auto& mesh : model_impl.get_meshes()) {
 		VkDeviceSize offsets[] = {0};
-		vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.get_vertex_buffer().buffer(), offsets);
-		vkCmdBindIndexBuffer(command_buffer, mesh.get_index_buffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.get_vertex_buffer().get_buffer(), offsets);
+		vkCmdBindIndexBuffer(command_buffer, mesh.get_index_buffer().get_buffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		// Push constants for model matrix
 		auto model_matrix = glm::translate(glm::mat4(1.0f), pos);
@@ -325,6 +328,12 @@ void Vulkan::BasicRenderer::end_frame()
 		CORE_DEBUG("Trying to end_frame() with BasicRenderer but the frame wasn't started");
 		return ;
 	}
+
+	if (!frame_available)
+		return ;
+
+	frame_started = false;
+	frame_available = false;
 
 	vkResetFences(VulkanInstance::logical_device(), 1, &last_frame_presented_fence);
 	end_renderpass();
@@ -388,7 +397,7 @@ bool Vulkan::BasicRenderer::create_camera_descriptor_set()
 	}
 
 	VkDescriptorBufferInfo buffer_info{};
-	buffer_info.buffer = camera_uniform_buffer.buffer();
+	buffer_info.buffer = camera_uniform_buffer.get_buffer();
 	buffer_info.offset = 0;
 	buffer_info.range = sizeof(CameraUBO);
 

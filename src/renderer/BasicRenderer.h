@@ -181,6 +181,7 @@ private:	// Members
 	//----
 	static bool			alive;
 	static bool			frame_started;
+	static bool			frame_available;
 	static u32			current_image_index;
 
 	//----
