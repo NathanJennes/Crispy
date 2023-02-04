@@ -441,7 +441,6 @@ bool VulkanInstance::create_immediate_objects()
 
 	VkFenceCreateInfo fence_infos{};
 	fence_infos.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fence_infos.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	result = vkCreateFence(logical_device(), &fence_infos, nullptr, &immediate_fence);
 	if (result != VK_SUCCESS) {
