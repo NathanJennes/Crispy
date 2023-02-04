@@ -42,13 +42,13 @@ public:
 #ifdef DEBUG
 		u32 mem_requirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		if ((memory_properties & mem_requirements) != mem_requirements) {
-			CORE_ERROR("Buffer::set_data(): the buffer memory is not coherent and visible by the host!");
+			CORE_ERROR("Buffer::set_data(): the buffer memory is not coherent and visible by the host!")
 			return ;
 		}
 
 		if (size < offset + vector.size() * sizeof(T)) {
-			CORE_ERROR("Buffer::set_data(): The buffer is not large enough to copy this data!");
-			CORE_ERROR("Buffer::set_data(): size(): %lu, offset: %lu, byte_count: %lu", size, offset, vector.size() * sizeof(T));
+			CORE_ERROR("Buffer::set_data(): The buffer is not large enough to copy this data!")
+			CORE_ERROR("Buffer::set_data(): size(): %lu, offset: %lu, byte_count: %lu", size, offset, vector.size() * sizeof(T))
 			return ;
 		}
 #endif

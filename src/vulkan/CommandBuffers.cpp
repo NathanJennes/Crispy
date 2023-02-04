@@ -23,7 +23,7 @@ bool CommandBuffers::initialize(u32 frames_in_flight_count)
 	pool_create_infos.queueFamilyIndex = queue_indices.graphics_index.value();
 
 	if (vkCreateCommandPool(VulkanInstance::logical_device(), &pool_create_infos, nullptr, &_command_pool) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create a command pool!");
+		CORE_ERROR("Couldn't create a command pool!")
 		return false;
 	}
 
@@ -35,7 +35,7 @@ bool CommandBuffers::initialize(u32 frames_in_flight_count)
 
 	command_buffers().resize(frames_in_flight_count);
 	if (vkAllocateCommandBuffers(VulkanInstance::logical_device(), &alloc_infos, command_buffers().data()) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the command buffer!");
+		CORE_ERROR("Couldn't create the command buffer!")
 		return false;
 	}
 
@@ -58,7 +58,7 @@ void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 i
 	begin_infos.pInheritanceInfo = nullptr;
 
 	if (vkBeginCommandBuffer(command_buffer, &begin_infos) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't begin a command buffer!");
+		CORE_ERROR("Couldn't begin a command buffer!")
 		return ;
 	}
 
@@ -104,8 +104,7 @@ void CommandBuffers::record_command_buffer(VkCommandBuffer command_buffer, u32 i
 
 	vkCmdEndRenderPass(command_buffer);
 
-	if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't record command buffer!");
-	}
+	if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
+		CORE_ERROR("Couldn't record command buffer!")
 }
 } // Vulkan

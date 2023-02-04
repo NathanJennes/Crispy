@@ -86,4 +86,4 @@ const char* vulkan_error_to_string(VkResult result)
 	return "VkResult returned an unknown error code!";
 }
 
-};
+}

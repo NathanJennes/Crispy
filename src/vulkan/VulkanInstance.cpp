@@ -32,29 +32,29 @@ bool VulkanInstance::initialize()
 {
 	if (!init_instance())
 		return false;
-	CORE_TRACE("Vulkan instance initialized!");
+	CORE_TRACE("Vulkan instance initialized!")
 
 #ifdef DEBUG
 	if (!init_debug_messenger())
 		return false;
-	CORE_TRACE("Vulkan validation layers initialized!");
+	CORE_TRACE("Vulkan validation layers initialized!")
 #endif
 
 	if (!Window::initialize_surface())
 		return false;
-	CORE_TRACE("Window surface created!");
+	CORE_TRACE("Window surface created!")
 
 	if (!pick_physical_device())
 		return false;
-	CORE_TRACE("Physical device picked!");
+	CORE_TRACE("Physical device picked!")
 
 	if (!init_logical_device())
 		return false;
-	CORE_TRACE("Logical device initialized!");
+	CORE_TRACE("Logical device initialized!")
 
 	if (!create_immediate_objects())
 		return false;
-	CORE_TRACE("Vulkan Instance's immediate objects created");
+	CORE_TRACE("Vulkan Instance's immediate objects created")
 
 	return true;
 }
@@ -64,7 +64,7 @@ bool VulkanInstance::init_instance()
 #ifdef DEBUG
 	// Check early if validation layers are supported
 	if (!supports_validation_layer(get_required_validation_layers())) {
-		CORE_ERROR("Started in debug mode but validation layers are unavailable!");
+		CORE_ERROR("Started in debug mode but validation layers are unavailable!")
 		return false;
 	}
 #endif
@@ -115,7 +115,7 @@ bool VulkanInstance::init_instance()
 #endif
 
 	if (vkCreateInstance(&instance_info, nullptr, &_instance) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create the vulkan instance!");
+		CORE_ERROR("Couldn't create the vulkan instance!")
 		return false;
 	}
 
@@ -140,7 +140,7 @@ bool VulkanInstance::init_debug_messenger()
 	if (func != nullptr) {
 		return func(instance(), &create_info, nullptr, &_debug_messenger) == VK_SUCCESS;
 	} else {
-		CORE_ERROR("Couldn't load function: vkCreateDebugUtilsMessengerEXT");
+		CORE_ERROR("Couldn't load function: vkCreateDebugUtilsMessengerEXT")
 		return false;
 	}
 }
@@ -212,26 +212,26 @@ bool VulkanInstance::pick_physical_device()
 {
 	std::vector<VkPhysicalDevice> devices = get_physical_device_list();
 	if (devices.empty()) {
-		CORE_ERROR("No physical device that supports vulkan was found!");
+		CORE_ERROR("No physical device that supports vulkan was found!")
 		return false;
 	}
 
 #ifdef DEBUG
-	CORE_DEBUG("Available GPU devices: ");
+	CORE_DEBUG("Available GPU devices: ")
 	for (auto &device: devices)
 	{
 		VkPhysicalDeviceProperties properties{};
 		vkGetPhysicalDeviceProperties(device, &properties);
 		std::string text("Name: ");
 		text += properties.deviceName;
-		CORE_DEBUG(text.c_str());
+		CORE_DEBUG(text.c_str())
 		text = "API version: ";
 		text += std::to_string(VK_API_VERSION_MAJOR(properties.apiVersion));
 		text += ".";
 		text += std::to_string(VK_API_VERSION_MINOR(properties.apiVersion));
 		text += ".";
 		text += std::to_string(VK_API_VERSION_PATCH(properties.apiVersion));
-		CORE_DEBUG(text.c_str());
+		CORE_DEBUG(text.c_str())
 	}
 #endif
 
@@ -242,7 +242,7 @@ bool VulkanInstance::pick_physical_device()
 	vkGetPhysicalDeviceProperties(_physical_device, &properties);
 	std::string text("Device picked: ");
 	text += properties.deviceName;
-	CORE_TRACE(text.c_str());
+	CORE_TRACE(text.c_str())
 #endif
 
 	return true;
@@ -394,7 +394,7 @@ bool VulkanInstance::init_logical_device()
 	IN_DEBUG(device_infos.enabledLayerCount = required_layers.size());
 
 	if (vkCreateDevice(physical_device(), &device_infos, nullptr, &_logical_device) != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create a logical device!");
+		CORE_ERROR("Couldn't create a logical device!")
 		return false;
 	}
 
@@ -423,7 +423,7 @@ bool VulkanInstance::create_immediate_objects()
 
 	VkResult result = vkCreateCommandPool(logical_device(), &pool_create_infos, nullptr, &immediate_command_pool);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create VulkanInstance's immediate command pool: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't create VulkanInstance's immediate command pool: %s", vulkan_error_to_string(result))
 		return false;
 	}
 
@@ -435,7 +435,7 @@ bool VulkanInstance::create_immediate_objects()
 
 	result = vkAllocateCommandBuffers(logical_device(), &alloc_infos, &immediate_command_buffer);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't create VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result))
 		return false;
 	}
 
@@ -444,7 +444,7 @@ bool VulkanInstance::create_immediate_objects()
 
 	result = vkCreateFence(logical_device(), &fence_infos, nullptr, &immediate_fence);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't create VulkanInstance's immediate fence!");
+		CORE_ERROR("Couldn't create VulkanInstance's immediate fence!")
 		return false;
 	}
 
@@ -468,7 +468,7 @@ void VulkanInstance::immediate_submit(std::function<void(VkCommandBuffer cmd_buf
 
 	VkResult result = vkBeginCommandBuffer(immediate_command_buffer, &begin_infos);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't begin VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't begin VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result))
 		return ;
 	}
 
@@ -476,7 +476,7 @@ void VulkanInstance::immediate_submit(std::function<void(VkCommandBuffer cmd_buf
 
 	result = vkEndCommandBuffer(immediate_command_buffer);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't end VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't end VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result))
 		return ;
 	}
 
@@ -487,7 +487,7 @@ void VulkanInstance::immediate_submit(std::function<void(VkCommandBuffer cmd_buf
 
 	result = vkQueueSubmit(graphics_queue(), 1, &submit_infos, immediate_fence);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't submit VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't submit VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result))
 		return ;
 	}
 

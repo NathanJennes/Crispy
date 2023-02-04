@@ -43,9 +43,8 @@ Buffer::Buffer(VkDeviceSize new_size, VkBufferUsageFlags new_usage, VkMemoryProp
 		initialize();
 		if (buffer != VK_NULL_HANDLE)
 			buffer_references[buffer]++;
-	} else {
-		CORE_WARN("Trying to create a Buffer with size 0!");
-	}
+	} else
+		CORE_WARN("Trying to create a Buffer with size 0!")
 }
 
 Buffer::~Buffer()
@@ -109,7 +108,7 @@ void Buffer::shutdown()
 	if (buffer != VK_NULL_HANDLE) {
 #ifdef DEBUG
 		if (buffer_references.find(buffer) == buffer_references.end()) {
-			CORE_ERROR("Trying to remove reference count from a buffer that wasn't reference counted");
+			CORE_ERROR("Trying to remove reference count from a buffer that wasn't reference counted")
 			return ;
 		}
 #endif
@@ -138,7 +137,7 @@ void Buffer::create_buffer()
 
 	if (vkCreateBuffer(VulkanInstance::logical_device(), &create_infos, nullptr, &buffer) != VK_SUCCESS) {
 		TODO_PROPAGATE_ERRORS
-		CORE_DEBUG("Couldn't create a Buffer!");
+		CORE_DEBUG("Couldn't create a Buffer!")
 	}
 }
 
@@ -150,7 +149,7 @@ void Buffer::allocate_buffer()
 	std::optional<u32> memory_type_index = find_memory_type(mem_requirements.memoryTypeBits, memory_properties).value();
 	if (!memory_type_index.has_value()) {
 		TODO_PROPAGATE_ERRORS
-		CORE_ERROR("Couldn't find a memory region with the right type!");
+		CORE_ERROR("Couldn't find a memory region with the right type!")
 		return ;
 	}
 
@@ -161,7 +160,7 @@ void Buffer::allocate_buffer()
 
 	if (vkAllocateMemory(VulkanInstance::logical_device(), &alloc_infos, nullptr, &memory) != VK_SUCCESS) {
 		TODO_PROPAGATE_ERRORS
-		CORE_ERROR("Couldn't allocate memory for a Buffer!");
+		CORE_ERROR("Couldn't allocate memory for a Buffer!")
 	}
 
 	vkBindBufferMemory(VulkanInstance::logical_device(), buffer, memory, 0);
@@ -198,23 +197,23 @@ void Buffer::copy_to(const Buffer& buffer, u32 dst_offset, u32 size_to_copy, u32
 {
 #ifdef DEBUG
 	if (buffer.size < dst_offset + size_to_copy) {
-		CORE_ERROR("Buffer::copy_to(): destination buffer not large enough!");
-		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %lu", buffer.size, dst_offset, size_to_copy);
+		CORE_ERROR("Buffer::copy_to(): destination buffer not large enough!")
+		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %lu", buffer.size, dst_offset, size_to_copy)
 		return ;
 	}
 	if (size < src_offset + size_to_copy) {
-		CORE_ERROR("Buffer::copy_to(): source buffer not large enough! This will result in reading past the source buffer!");
-		CORE_ERROR("Buffer::copy_to(): size() = %u, src_offset = %u, size_to_copy = %lu", size, src_offset, size_to_copy);
+		CORE_ERROR("Buffer::copy_to(): source buffer not large enough! This will result in reading past the source buffer!")
+		CORE_ERROR("Buffer::copy_to(): size() = %u, src_offset = %u, size_to_copy = %lu", size, src_offset, size_to_copy)
 		return ;
 	}
 
 	if ((buffer.usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
-		CORE_ERROR("Buffer::copy_to(): destination buffer was not set-up to be used as destination in a transfer!");
+		CORE_ERROR("Buffer::copy_to(): destination buffer was not set-up to be used as destination in a transfer!")
 		return ;
 	}
 
 	if ((usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0) {
-		CORE_ERROR("Buffer::copy_to(): source buffer was not set-up to be used as source in a transfer!");
+		CORE_ERROR("Buffer::copy_to(): source buffer was not set-up to be used as source in a transfer!")
 		return ;
 	}
 
@@ -226,18 +225,18 @@ void Buffer::copy_to(const Buffer &buffer, u32 dst_offset) const
 {
 #ifdef DEBUG
 	if (buffer.size < dst_offset + size) {
-		CORE_ERROR("Buffer::copy_to(): destination buffer not large enough!");
-		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %u", buffer.size, dst_offset, size);
+		CORE_ERROR("Buffer::copy_to(): destination buffer not large enough!")
+		CORE_ERROR("Buffer::copy_to(): buffer.size() = %u, dst_offset = %u, size_to_copy = %u", buffer.size, dst_offset, size)
 		return ;
 	}
 
 	if ((buffer.usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
-		CORE_ERROR("Buffer::copy_to(): destination buffer was not set-up to be used as destination in a transfer!");
+		CORE_ERROR("Buffer::copy_to(): destination buffer was not set-up to be used as destination in a transfer!")
 		return ;
 	}
 
 	if ((usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0) {
-		CORE_ERROR("Buffer::copy_to(): source buffer was not set-up to be used as source in a transfer!");
+		CORE_ERROR("Buffer::copy_to(): source buffer was not set-up to be used as source in a transfer!")
 		return ;
 	}
 
@@ -251,13 +250,13 @@ void Buffer::set_data(const void *src_data, size_t byte_count, u32 offset)
 #ifdef DEBUG
 	u32 mem_requirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	if ((memory_properties & mem_requirements) != mem_requirements) {
-		CORE_ERROR("Buffer::set_data(): the buffer memory is not coherent and visible by the host!");
+		CORE_ERROR("Buffer::set_data(): the buffer memory is not coherent and visible by the host!")
 		return ;
 	}
 
 	if (size < offset + byte_count) {
-		CORE_ERROR("Buffer::set_data(): The buffer is not large enough to copy this data!");
-		CORE_ERROR("Buffer::set_data(): size(): %u, offset: %u, byte_count: %lu", size, offset, byte_count);
+		CORE_ERROR("Buffer::set_data(): The buffer is not large enough to copy this data!")
+		CORE_ERROR("Buffer::set_data(): size(): %u, offset: %u, byte_count: %lu", size, offset, byte_count)
 		return ;
 	}
 #endif
