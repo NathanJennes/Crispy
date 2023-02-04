@@ -44,8 +44,9 @@ Buffer::Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlag
 {
 	if (size > 0)
 		initialize();
-	else
+	else {
 		CORE_WARN("Trying to create a Buffer with size 0!");
+	}
 }
 
 Buffer::~Buffer()
