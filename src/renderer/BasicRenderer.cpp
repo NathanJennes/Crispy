@@ -191,8 +191,8 @@ Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
 		return ;
 	}
 	VkDeviceSize offsets[] = {0};
-	vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.get_vertex_buffer().buffer(), offsets);
-	vkCmdBindIndexBuffer(command_buffer, mesh.get_index_buffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.get_vertex_buffer().get_buffer(), offsets);
+	vkCmdBindIndexBuffer(command_buffer, mesh.get_index_buffer().get_buffer(), 0, VK_INDEX_TYPE_UINT32);
 
 	// Push constants for model matrix
 	auto model = glm::translate(glm::mat4(1.0f), pos);
@@ -281,7 +281,7 @@ bool Vulkan::BasicRenderer::create_camera_descriptor_set()
 	}
 
 	VkDescriptorBufferInfo buffer_info{};
-	buffer_info.buffer = camera_uniform_buffer.buffer();
+	buffer_info.buffer = camera_uniform_buffer.get_buffer();
 	buffer_info.offset = 0;
 	buffer_info.range = sizeof(CameraUBO);
 
