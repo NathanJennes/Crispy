@@ -463,12 +463,12 @@ void VulkanInstance::immediate_submit(std::function<void(VkCommandBuffer cmd_buf
 {
 	VkCommandBufferBeginInfo begin_infos{};
 	begin_infos.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_infos.flags = 0;
+	begin_infos.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	begin_infos.pInheritanceInfo = nullptr;
 
 	VkResult result = vkBeginCommandBuffer(immediate_command_buffer, &begin_infos);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't begin BasicRenderer's command buffer: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't begin VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
 		return ;
 	}
 
@@ -476,14 +476,14 @@ void VulkanInstance::immediate_submit(std::function<void(VkCommandBuffer cmd_buf
 
 	result = vkEndCommandBuffer(immediate_command_buffer);
 	if (result != VK_SUCCESS) {
-		CORE_ERROR("Couldn't end command buffer: %s", vulkan_error_to_string(result));
+		CORE_ERROR("Couldn't end VulkanInstance's immediate command buffer: %s", vulkan_error_to_string(result));
 		return ;
 	}
 
 	VkSubmitInfo submit_infos{};
 	submit_infos.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_infos.pCommandBuffers = &immediate_command_buffer;
-
+	submit_infos.commandBufferCount = 1;
 
 	result = vkQueueSubmit(graphics_queue(), 1, &submit_infos, immediate_fence);
 	if (result != VK_SUCCESS) {
