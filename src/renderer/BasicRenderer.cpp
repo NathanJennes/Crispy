@@ -43,12 +43,12 @@ BasicRenderer::Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector
 
 }
 
-BasicRenderer::Mesh::Mesh(Vulkan::BasicRenderer::Mesh &&other) noexcept
+BasicRenderer::Mesh::Mesh(BasicRenderer::Mesh &&other) noexcept
 	: vertex_buffer(std::move(other.vertex_buffer)), index_buffer(std::move(other.index_buffer)), vertex_count(other.vertex_count), index_count(other.index_count)
 {
 }
 
-BasicRenderer::Mesh &Vulkan::BasicRenderer::Mesh::operator=(const Vulkan::BasicRenderer::Mesh &other)
+BasicRenderer::Mesh &BasicRenderer::Mesh::operator=(const BasicRenderer::Mesh &other)
 {
 	if (&other == this)
 		return *this;
@@ -61,7 +61,7 @@ BasicRenderer::Mesh &Vulkan::BasicRenderer::Mesh::operator=(const Vulkan::BasicR
 	return *this;
 }
 
-BasicRenderer::Mesh &Vulkan::BasicRenderer::Mesh::operator=(Vulkan::BasicRenderer::Mesh &&other) noexcept
+BasicRenderer::Mesh &BasicRenderer::Mesh::operator=(BasicRenderer::Mesh &&other) noexcept
 {
 	if (&other == this)
 		return *this;
@@ -75,12 +75,83 @@ BasicRenderer::Mesh &Vulkan::BasicRenderer::Mesh::operator=(Vulkan::BasicRendere
 }
 
 //----
+// Model
+//----
+BasicRenderer::Model::Model(u32 new_id)
+	: id(new_id)
+{
+	if (!BasicRenderer::add_reference_to_model(id.value())) {
+		CORE_WARN("Couldn't add a reference to the backend model when creating a new Model. Id: %u", new_id);
+	}
+}
+
+BasicRenderer::Model::Model(const BasicRenderer::Model &other)
+	: id(other.get_id())
+{
+	if (id.has_value() && !BasicRenderer::add_reference_to_model(id.value())) {
+		CORE_WARN("Couldn't add a reference to the backend model when creating a new Model. Id: %u", id.value());
+	}
+}
+
+BasicRenderer::Model::Model(BasicRenderer::Model &&other) noexcept
+	: id(other.get_id())
+{
+	other.reset_id();
+}
+
+BasicRenderer::Model &BasicRenderer::Model::operator=(const BasicRenderer::Model &other)
+{
+	if (&other == this)
+		return *this;
+
+	if (id.has_value())
+		BasicRenderer::remove_reference_to_model(id.value());
+
+	id = other.get_id();
+	if (id.has_value() && !BasicRenderer::add_reference_to_model(id.value())) {
+		CORE_WARN("Couldn't add a reference to the backend model when creating a new Model. Id: %u", id.value());
+	}
+	return *this;
+}
+
+BasicRenderer::Model &BasicRenderer::Model::operator=(BasicRenderer::Model &&other) noexcept
+{
+	if (&other == this)
+		return *this;
+
+	if (id.has_value())
+		BasicRenderer::remove_reference_to_model(id.value());
+
+	id = other.get_id();
+	other.reset_id();
+
+	return *this;
+}
+
+BasicRenderer::Model::~Model()
+{
+	unload();
+}
+
+void BasicRenderer::Model::reset_id()
+{
+	id = {};
+}
+
+void BasicRenderer::Model::unload()
+{
+	if (id.has_value())
+		BasicRenderer::remove_reference_to_model(id.value());
+}
+
+//----
 // Renderer
 //----
 VkSemaphore			BasicRenderer::image_available_semaphore = VK_NULL_HANDLE;
 VkSemaphore			BasicRenderer::render_finished_semaphore = VK_NULL_HANDLE;
 VkFence				BasicRenderer::last_frame_presented_fence = VK_NULL_HANDLE;
 
+bool				BasicRenderer::alive = false;
 bool				BasicRenderer::frame_started = false;
 bool				BasicRenderer::frame_available = false;
 u32					BasicRenderer::current_image_index = 0;
@@ -92,8 +163,16 @@ VkDescriptorSet		BasicRenderer::camera_descriptor_set = VK_NULL_HANDLE;
 VkCommandPool		BasicRenderer::command_pool = VK_NULL_HANDLE;
 VkCommandBuffer		BasicRenderer::command_buffer = VK_NULL_HANDLE;
 
-bool Vulkan::BasicRenderer::initialize()
+BasicRenderer::ModelImpl				BasicRenderer::default_model;
+std::vector<BasicRenderer::ModelImpl>	BasicRenderer::loaded_models;
+
+bool BasicRenderer::initialize()
 {
+	if (alive) {
+		CORE_WARN("Trying to initialize() BasicRenderer but the renderer is already alive");
+		return false;
+	}
+
 	if (!VulkanInstance::initialize())
 		return false;
 	if (!SwapchainManager::initialize())
@@ -126,12 +205,25 @@ bool Vulkan::BasicRenderer::initialize()
 		return false;
 	CORE_TRACE("BasicRenderer's command buffer created");
 
+	load_default_model();
+	CORE_TRACE("BasicRenderer's default model loaded");
+
 	CORE_TRACE("BasicRenderer fully initialized!");
+	alive = true;
 	return true;
 }
 
-void Vulkan::BasicRenderer::shutdown()
+void BasicRenderer::shutdown()
 {
+	if (!alive) {
+		CORE_WARN("Trying to shutdown() BasicRenderer but the renderer isn't alive");
+		return ;
+	}
+
+	default_model.release_ressources();
+	for (auto& model : loaded_models)
+		model.release_ressources();
+
 	destroy_command_pool();
 	destroy_descriptor_pool();
 	destroy_sync_objects();
@@ -140,10 +232,16 @@ void Vulkan::BasicRenderer::shutdown()
 	GraphicsPipeline::shutdown();
 	SwapchainManager::shutdown();
 	VulkanInstance::shutdown();
+	alive = false;
 }
 
-void Vulkan::BasicRenderer::begin_frame()
+void BasicRenderer::begin_frame()
 {
+	if (!alive) {
+		CORE_WARN("Trying to begin_frame() with BasicRenderer but the renderer isn't alive");
+		return ;
+	}
+
 	frame_started = true;
 	wait_for_last_frame_finished();
 
@@ -166,50 +264,68 @@ void Vulkan::BasicRenderer::begin_frame()
 	frame_available = true;
 }
 
-void Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
+void BasicRenderer::draw(const BasicRenderer::Model &model,
 	const glm::vec3 &pos)
 {
-	draw(mesh, pos, glm::vec3(0.0), glm::vec3(1.0));
+	draw(model, pos, glm::vec3(0.0), glm::vec3(1.0));
 }
 
-void
-Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
+void BasicRenderer::draw(const BasicRenderer::Model &model,
 	const glm::vec3 &pos, const glm::vec3 &rotation)
 {
-	draw(mesh, pos, rotation, glm::vec3(1.0));
+	draw(model, pos, rotation, glm::vec3(1.0));
 }
 
-void
-Vulkan::BasicRenderer::draw(const Vulkan::BasicRenderer::Mesh &mesh,
+void BasicRenderer::draw(const BasicRenderer::Model &model,
 	const glm::vec3 &pos, const glm::vec3 &rotation, const glm::vec3 &scale)
 {
+	if (!alive) {
+		CORE_WARN("Trying to draw() with BasicRenderer the renderer isn't alive");
+		return ;
+	}
+
 	if (!frame_available)
 		return ;
 
 	if (!frame_started) {
-		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
+		CORE_WARN("Trying to draw() with BasicRenderer but the frame wasn't started");
 		return ;
 	}
-	VkDeviceSize offsets[] = {0};
-	vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.get_vertex_buffer().get_buffer(), offsets);
-	vkCmdBindIndexBuffer(command_buffer, mesh.get_index_buffer().get_buffer(), 0, VK_INDEX_TYPE_UINT32);
 
-	// Push constants for model matrix
-	auto model = glm::translate(glm::mat4(1.0f), pos);
-	model = glm::rotate(model, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-	model = glm::rotate(model, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::rotate(model, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, scale);
-	vkCmdPushConstants(command_buffer, GraphicsPipeline::pipeline_layout(),
-		VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
+	if (!model.get_id().has_value()) {
+		CORE_WARN("Trying to draw() with a model that wasn't loaded");
+		return ;
+	}
 
-	vkCmdDrawIndexed(command_buffer, mesh.get_index_count(), 1, 0, 0, 0);
+	auto& model_impl = find_model_by_id(model.get_id().value());
+
+	for (auto& mesh : model_impl.get_meshes()) {
+		VkDeviceSize offsets[] = {0};
+		vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.get_vertex_buffer().get_buffer(), offsets);
+		vkCmdBindIndexBuffer(command_buffer, mesh.get_index_buffer().get_buffer(), 0, VK_INDEX_TYPE_UINT32);
+
+		// Push constants for model matrix
+		auto model_matrix = glm::translate(glm::mat4(1.0f), pos);
+		model_matrix = glm::rotate(model_matrix, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+		model_matrix = glm::rotate(model_matrix, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_matrix = glm::rotate(model_matrix, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+		model_matrix = glm::scale(model_matrix, scale);
+		vkCmdPushConstants(command_buffer, GraphicsPipeline::pipeline_layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+			sizeof(glm::mat4), &model_matrix);
+
+		vkCmdDrawIndexed(command_buffer, mesh.get_index_count(), 1, 0, 0, 0);
+	}
 }
 
 void Vulkan::BasicRenderer::end_frame()
 {
+	if (!alive) {
+		CORE_WARN("Trying to end_frame() with BasicRenderer the renderer is not alive");
+		return ;
+	}
+
 	if (!frame_started) {
-		CORE_DEBUG("Trying to draw() with BasicRenderer but the frame wasn't started");
+		CORE_DEBUG("Trying to end_frame() with BasicRenderer but the frame wasn't started");
 		return ;
 	}
 
@@ -510,5 +626,151 @@ void BasicRenderer::destroy_command_pool()
 {
 	if (command_pool != VK_NULL_HANDLE)
 		vkDestroyCommandPool(VulkanInstance::logical_device(), command_pool, nullptr);
+}
+
+//----
+// Model management
+//----
+BasicRenderer::ModelImpl::ModelImpl(u32 new_id)
+	:id(new_id)
+{}
+
+void BasicRenderer::ModelImpl::add_mesh(const std::vector<Vertex> &vertices, const std::vector<u32> &indices)
+{
+	meshes.emplace_back(vertices, indices);
+}
+
+void BasicRenderer::ModelImpl::release_ressources()
+{
+	for (auto& mesh : meshes)
+		mesh.release_resources();
+}
+
+void BasicRenderer::load_default_model()
+{
+	// Cube
+	// TODO: load that with an obj loader
+	std::vector<Vertex> vertices = {Vertex({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}),
+								   Vertex({5.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}),
+								   Vertex({5.0f, -5.0f, 0.0f}, {0.5f, 1.0f, 1.0f}),
+								   Vertex({0.0f, -5.0f, 0.0f}, {1.0f, 0.0f, 1.0f}),
+								   Vertex({0.0f, 0.0f, 5.0f}, {1.0f, 0.5f, 0.0f}),
+								   Vertex({5.0f, 0.0f, 5.0f}, {1.0f, 1.0f, 0.5f}),
+								   Vertex({5.0f, -5.0f, 5.0f}, {1.0f, 0.0f, 0.0f}),
+								   Vertex({0.0f, -5.0f, 5.0f}, {0.0f, 0.0f, 1.0f})};
+
+	std::vector<u32> indices = {0, 1, 2, 0, 2, 3, 4, 5, 1, 4, 1, 0, 1, 5, 6, 1, 6, 2, 4, 0, 3, 4, 3, 7, 3, 2, 6, 3, 6, 7, 5, 4, 7, 5, 7, 6};
+	default_model.add_mesh(vertices, indices);
+}
+
+BasicRenderer::Model BasicRenderer::load_model(const std::vector<Vertex> &vertices, const std::vector<u32> &indices)
+{
+	if (!alive) {
+		CORE_WARN("Trying to load_model() BasicRenderer but the renderer isn't alive");
+		return {};
+	}
+
+	u32 new_id = find_next_available_model_id();
+	ModelImpl new_model(new_id);
+	new_model.add_mesh(vertices, indices);
+	loaded_models.emplace_back(std::move(new_model));
+
+	return Model(new_id);
+}
+
+bool BasicRenderer::unload_model(BasicRenderer::Model &model)
+{
+	if (!alive)
+		return true;
+
+	if (!model.get_id().has_value()) {
+		CORE_WARN("Tried to unload an empty model");
+		return false;
+	}
+
+	if (remove_reference_to_model(model.get_id().value()))
+		return true;
+
+	CORE_ERROR("Tried to unload model with id %d, but no ModelImpl matching was found", model.get_id().value());
+	return false;
+}
+
+u32 BasicRenderer::find_next_available_model_id()
+{
+	// TODO: this can be better
+	static u32 id_counter = 0;
+
+	if (id_counter == std::numeric_limits<u32>::max()) {
+		CORE_ERROR("Maximum model id has been reached");
+	}
+
+	return id_counter++;
+}
+
+BasicRenderer::ModelImpl &BasicRenderer::find_model_by_id(u32 id)
+{
+	for (auto & loaded_model : loaded_models) {
+		if (!loaded_model.get_id().has_value())
+			continue;
+
+		if (loaded_model.get_id().value() == id)
+			return loaded_model;
+	}
+
+	CORE_WARN("Trying to find a model with an invalid id, loading default model instead");
+	return default_model;
+}
+
+bool BasicRenderer::model_exists(u32 id)
+{
+	for (auto & loaded_model : loaded_models) {
+		if (!loaded_model.get_id().has_value())
+			continue;
+
+		if (loaded_model.get_id().value() == id)
+			return true;
+	}
+	return false;
+}
+
+bool BasicRenderer::add_reference_to_model(u32 id)
+{
+	for (auto & loaded_model : loaded_models) {
+		if (!loaded_model.get_id().has_value())
+			continue;
+
+		if (loaded_model.get_id().value() == id) {
+			loaded_model.add_reference();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool BasicRenderer::remove_reference_to_model(u32 id)
+{
+	for (auto & loaded_model : loaded_models) {
+		if (!loaded_model.get_id().has_value())
+			continue;
+
+		if (loaded_model.get_id().value() == id) {
+			loaded_model.remove_reference();
+			return true;
+		}
+	}
+	return false;
+}
+
+void BasicRenderer::remove_model_from_list(BasicRenderer::ModelImpl &model)
+{
+	if (!alive)
+		return ;
+
+	if (!model.get_id().has_value()) {
+		CORE_WARN("Tried to remove an empty model from BasicRenderer's list");
+		return ;
+	}
+
+	model.release_ressources();
 }
 }
